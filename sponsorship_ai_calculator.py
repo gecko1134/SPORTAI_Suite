@@ -1,27 +1,27 @@
+
 import streamlit as st
 
 def run():
-    st.title("🤖 Sponsorship AI Calculator")
+    st.title("💼 Sponsorship AI Calculator")
+    st.markdown("### Select Sponsorship Assets")
 
-    value = 0
     assets = {
-        "Court Banner ($2500)": 2500,
-        "Turf Naming ($10,000)": 10000,
-        "Digital Ad ($1500)": 1500
+        "Full Dome Naming": 50000,
+        "Court 1": 5000,
+        "Court 2": 5000,
+        "Court 3": 5000,
+        "Court 4": 5000,
+        "Full Turf": 10000,
+        "Half Turf": 6000,
+        "Scoreboard": 4000,
+        "Banners": 2000,
+        "Digital Ads": 1500
     }
 
-    st.markdown("Select Assets:")
-    selected = [k for k in assets if st.checkbox(k)]
-    for k in selected:
-        value += assets[k]
+    selected = st.multiselect("Available Assets", list(assets.keys()))
+    total = sum([assets[k] for k in selected])
 
-    visibility = st.slider("Visibility (1-10)", 1, 10, 5)
-    exclusivity = st.slider("Exclusivity (1-10)", 1, 10, 5)
-    duration = st.slider("Months", 1, 36, 12)
+    tier = "Platinum" if total > 30000 else "Gold" if total > 15000 else "Silver" if total > 5000 else "Bronze"
 
-    multiplier = 1 + (visibility + exclusivity) / 20
-    estimated = value * multiplier * (duration / 12)
-    tier = "Platinum" if estimated > 50000 else "Gold" if estimated > 25000 else "Silver"
-
-    st.metric("📈 Estimated Value", f"${estimated:,.2f}")
+    st.metric("Estimated Value", f"${total:,.0f}")
     st.success(f"Suggested Tier: {tier}")
