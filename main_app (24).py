@@ -1,3 +1,5 @@
+import grant_match_ai
+import grant_status_manager
 import donation_landing_page
 import crm_export_generator
 import donation_checkout
@@ -249,6 +251,8 @@ TOOLS = {
     "Donation Campaign Viewer": donation_campaign_viewer,
     "Public Donation Page": donation_landing_page,
     "CRM Export Builder": crm_export_generator,
+    "AI Grant Match": grant_match_ai,
+    "Grant Status Tracker": grant_status_manager,
     
 }
 
