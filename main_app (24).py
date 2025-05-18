@@ -178,7 +178,7 @@ TOOLS = {
     "Trail Access Planner": trail_access_planner,
     "Visual Calendar Layout": visual_calendar_layout,
     "Volunteer Hub": volunteer_hub,
-    "Weekly Report Generator": weekly_report_generator
+    "Weekly Report Generator": weekly_report_generator,
     "Esports Manager": esports_manager,
     "Adaptive Sports Center": adaptive_sports_center,
     "Tournament Scheduler": tournament_scheduler,
