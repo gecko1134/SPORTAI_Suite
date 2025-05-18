@@ -1,8 +1,5 @@
 import donor_profile_creator
 import donation_goal_tracker
-
-"Donor Profile Creator": donor_profile_creator,
-"Donation Goal Tracker": donation_goal_tracker,
 import portal_router
 import upsell_offer_engine
 import member_portal
