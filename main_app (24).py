@@ -1,3 +1,4 @@
+import sms_alert_center
 import real_time_dashboard
 import gsheets_sync
 import event_profit_analyzer
@@ -177,6 +178,7 @@ TOOLS = {
     "Adaptive Use Planner": adaptive_use_planner,
     "Real-Time Dashboard": real_time_dashboard,
     "Google Sheets Sync": gsheets_sync,
+    "SMS Alert Center": sms_alert_center,
 }
 
 def run():
