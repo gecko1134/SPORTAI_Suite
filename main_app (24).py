@@ -1,3 +1,4 @@
+import ai_facility_chat
 import slack_alert_center
 import webhook_automation
 import admin_sidebar_badges
@@ -219,6 +220,7 @@ TOOLS = {
     "Admin Sidebar Badges": admin_sidebar_badges,
     "Slack Alert Center": slack_alert_center,
     "Webhook Automation": webhook_automation,
+    "AI Facility Chat": ai_facility_chat,
     
 }
 
