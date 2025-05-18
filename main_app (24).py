@@ -1,3 +1,5 @@
+import donation_landing_page
+import crm_export_generator
 import donation_checkout
 import donation_campaign_viewer
 import donor_match_ai
@@ -245,6 +247,8 @@ TOOLS = {
     "Donor Message Builder": donor_message_builder,
     "Donation Checkout": donation_checkout,
     "Donation Campaign Viewer": donation_campaign_viewer,
+    "Public Donation Page": donation_landing_page,
+    "CRM Export Builder": crm_export_generator,
     
 }
 
