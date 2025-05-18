@@ -1,3 +1,5 @@
+import tournament_scheduler
+import international_team_portal
 import esports_manager
 import adaptive_sports_center
 import streamlit as st
@@ -161,6 +163,8 @@ TOOLS = {
     "Weekly Report Generator": weekly_report_generator
     "Esports Manager": esports_manager,
     "Adaptive Sports Center": adaptive_sports_center,
+    "Tournament Scheduler": tournament_scheduler,
+    "International Team Portal": international_team_portal,
 }
 
 def run():
