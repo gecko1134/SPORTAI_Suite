@@ -1,3 +1,5 @@
+import real_time_dashboard
+import gsheets_sync
 import event_profit_analyzer
 import adaptive_use_planner
 import park_activity_dashboard
@@ -173,6 +175,8 @@ TOOLS = {
     "Surface Demand Heatmap": surface_demand_heatmap,
     "Event Profitability Analyzer": event_profit_analyzer,
     "Adaptive Use Planner": adaptive_use_planner,
+    "Real-Time Dashboard": real_time_dashboard,
+    "Google Sheets Sync": gsheets_sync,
 }
 
 def run():
