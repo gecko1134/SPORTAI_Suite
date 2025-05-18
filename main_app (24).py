@@ -1,3 +1,5 @@
+import board_pdf_exporter
+import finance_feed_connector
 import board_financial_summary
 import revenue_projection_simulator
 import sponsorship_revenue_builder
@@ -195,6 +197,8 @@ TOOLS = {
     "Revenue Projection Simulator": revenue_projection_simulator,
     "Sponsorship Revenue Builder": sponsorship_revenue_builder,
     "Board Financial Summary": board_financial_summary,
+    "Board PDF Exporter": board_pdf_exporter,
+    "Finance Feed Connector": finance_feed_connector,
     
 }
 
