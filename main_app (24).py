@@ -1,3 +1,5 @@
+import donor_match_ai
+import donor_message_builder
 import donor_profile_creator
 import donation_goal_tracker
 import portal_router
@@ -237,6 +239,8 @@ TOOLS = {
     "Upsell Offer Engine": upsell_offer_engine,
     "Donor Profile Creator": donor_profile_creator,
     "Donation Goal Tracker": donation_goal_tracker,
+    "Donor Match AI": donor_match_ai,
+    "Donor Message Builder": donor_message_builder,
     
 }
 
