@@ -1,8 +1,5 @@
 import slack_alert_center
 import webhook_automation
-
-"Slack Alert Center": slack_alert_center,
-"Webhook Automation": webhook_automation,
 import admin_sidebar_badges
 import daily_task_scheduler
 import ai_voice_responder
