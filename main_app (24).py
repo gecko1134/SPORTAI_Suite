@@ -1,3 +1,5 @@
+import donation_checkout
+import donation_campaign_viewer
 import donor_match_ai
 import donor_message_builder
 import donor_profile_creator
@@ -241,6 +243,8 @@ TOOLS = {
     "Donation Goal Tracker": donation_goal_tracker,
     "Donor Match AI": donor_match_ai,
     "Donor Message Builder": donor_message_builder,
+    "Donation Checkout": donation_checkout,
+    "Donation Campaign Viewer": donation_campaign_viewer,
     
 }
 
