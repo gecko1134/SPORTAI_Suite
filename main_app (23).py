@@ -1,3 +1,6 @@
+import ai_sponsor_opportunity_finder
+...
+"AI Sponsor Opportunity Finder": ai_sponsor_opportunity_finder,
 import streamlit as st
 import json
 import auth
