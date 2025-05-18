@@ -1,16 +1,23 @@
+
 import streamlit as st
 import pandas as pd
 
 def run():
-    st.title("👥 Membership CRM Tracker")
+    st.title("👥 Membership CRM + AI Insights")
 
-    df = pd.DataFrame({
-        "Member": ["Jordan", "Casey", "Dana"],
-        "Tier": ["Elite", "Silver", "Family"],
-        "Join Date": ["2023-06-01", "2024-01-15", "2023-10-10"],
-        "Expires": ["2024-06-01", "2025-01-15", "2024-10-10"],
-        "Credits Remaining": [12, 4, 20],
-        "Usage Hours": [38, 10, 22]
+    data = pd.DataFrame({
+        "Member": ["Jordan", "Taylor", "Alex", "Sam", "Dana"],
+        "Tier": ["Gold", "Silver", "Basic", "Gold", "Silver"],
+        "Credits Remaining": [2, 8, 15, 1, 12],
+        "Last Visit": ["2024-06-01", "2024-05-12", "2024-03-15", "2024-06-04", "2024-04-20"]
     })
-    df["Upgrade Flag"] = df["Credits Remaining"].apply(lambda x: "Yes" if x < 5 else "No")
-    st.dataframe(df)
+
+    data["Status"] = "✅ Active"
+    data.loc[data["Credits Remaining"] < 5, "Status"] = "⚠️ Low Credits"
+    data.loc[pd.to_datetime(data["Last Visit"]) < pd.to_datetime("2024-05-01"), "Status"] = "🛑 At Risk"
+
+    st.dataframe(data)
+
+    st.markdown("### AI Recommendations")
+    st.info("Jordan (Gold): Suggest Elite tier upsell")
+    st.warning("Alex inactive since March — consider reactivation promo")
