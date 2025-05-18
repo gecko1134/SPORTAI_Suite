@@ -1,3 +1,8 @@
+import member_portal
+import sponsor_portal
+
+"Member Portal": member_portal,
+"Sponsor Portal": sponsor_portal,
 import public_schedule
 import sponsor_map_viewer
 import ai_facility_chat
@@ -225,6 +230,8 @@ TOOLS = {
     "AI Facility Chat": ai_facility_chat,
     "Public Schedule": public_schedule,
     "Sponsor Map Viewer": sponsor_map_viewer,
+    "Member Portal": member_portal,
+    "Sponsor Portal": sponsor_portal,
     
 }
 
