@@ -1,3 +1,5 @@
+import event_profit_analyzer
+import adaptive_use_planner
 import park_activity_dashboard
 import surface_demand_heatmap
 import tournament_scheduler
@@ -169,6 +171,8 @@ TOOLS = {
     "International Team Portal": international_team_portal,
     "Park Activity Dashboard": park_activity_dashboard,
     "Surface Demand Heatmap": surface_demand_heatmap,
+    "Event Profitability Analyzer": event_profit_analyzer,
+    "Adaptive Use Planner": adaptive_use_planner,
 }
 
 def run():
