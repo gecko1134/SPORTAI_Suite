@@ -1,3 +1,5 @@
+import daily_task_scheduler
+import ai_voice_responder
 import member_alerts_auto
 import credential_expiry_alerts
 import usage_alerts_auto
@@ -209,6 +211,8 @@ TOOLS = {
     "Sponsor Contract Alerts": contract_alerts_auto,
     "Member Alerts Auto": member_alerts_auto,
     "Credential Expiry Alerts": credential_expiry_alerts,
+    "Daily Task Scheduler": daily_task_scheduler,
+    "Voice Assistant": ai_voice_responder,
     
 }
 
