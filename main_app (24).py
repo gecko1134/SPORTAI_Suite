@@ -1,3 +1,4 @@
+import platform_guidebook_writer
 import board_pdf_exporter
 import finance_feed_connector
 import board_financial_summary
@@ -199,6 +200,7 @@ TOOLS = {
     "Board Financial Summary": board_financial_summary,
     "Board PDF Exporter": board_pdf_exporter,
     "Finance Feed Connector": finance_feed_connector,
+    "Platform Guidebook": platform_guidebook_writer,
     
 }
 
