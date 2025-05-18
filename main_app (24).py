@@ -1,3 +1,5 @@
+import revenue_projection_simulator
+import sponsorship_revenue_builder
 import event_admin
 import surface_usage_by_type
 import governance_admin
@@ -189,6 +191,9 @@ TOOLS = {
     "Governance Admin": governance_admin,
     "Governance Diagram": governance_diagram,
     "Financial Feed Sync": financial_feed_sync,
+    "Revenue Projection Simulator": revenue_projection_simulator,
+    "Sponsorship Revenue Builder": sponsorship_revenue_builder,
+    
 }
 
 def run():
