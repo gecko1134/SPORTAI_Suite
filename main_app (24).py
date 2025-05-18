@@ -1,8 +1,7 @@
+import portal_router
+import upsell_offer_engine
 import member_portal
 import sponsor_portal
-
-"Member Portal": member_portal,
-"Sponsor Portal": sponsor_portal,
 import public_schedule
 import sponsor_map_viewer
 import ai_facility_chat
@@ -232,6 +231,8 @@ TOOLS = {
     "Sponsor Map Viewer": sponsor_map_viewer,
     "Member Portal": member_portal,
     "Sponsor Portal": sponsor_portal,
+    "Portal Router": portal_router,
+    "Upsell Offer Engine": upsell_offer_engine,
     
 }
 
