@@ -1,3 +1,4 @@
+import admin_sidebar_badges
 import daily_task_scheduler
 import ai_voice_responder
 import member_alerts_auto
@@ -213,6 +214,7 @@ TOOLS = {
     "Credential Expiry Alerts": credential_expiry_alerts,
     "Daily Task Scheduler": daily_task_scheduler,
     "Voice Assistant": ai_voice_responder,
+    "Admin Sidebar Badges": admin_sidebar_badges,
     
 }
 
