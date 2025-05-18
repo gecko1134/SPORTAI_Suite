@@ -1,3 +1,5 @@
+import grant_alert_center
+import grant_writer_ai
 import grant_match_ai
 import grant_status_manager
 import donation_landing_page
@@ -253,6 +255,8 @@ TOOLS = {
     "CRM Export Builder": crm_export_generator,
     "AI Grant Match": grant_match_ai,
     "Grant Status Tracker": grant_status_manager,
+    "Grant Alerts": grant_alert_center,
+    "AI Grant Writer": grant_writer_ai,
     
 }
 
