@@ -1,3 +1,5 @@
+import esports_manager
+import adaptive_sports_center
 import streamlit as st
 import json
 import auth
@@ -157,6 +159,8 @@ TOOLS = {
     "Visual Calendar Layout": visual_calendar_layout,
     "Volunteer Hub": volunteer_hub,
     "Weekly Report Generator": weekly_report_generator
+    "Esports Manager": esports_manager,
+    "Adaptive Sports Center": adaptive_sports_center,
 }
 
 def run():
