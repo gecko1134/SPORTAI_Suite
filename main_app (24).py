@@ -1,3 +1,5 @@
+import crm_grant_donor_sync
+import pdf_grant_exporter
 import grant_alert_center
 import grant_writer_ai
 import grant_match_ai
@@ -257,6 +259,8 @@ TOOLS = {
     "Grant Status Tracker": grant_status_manager,
     "Grant Alerts": grant_alert_center,
     "AI Grant Writer": grant_writer_ai,
+    "CRM Sync (Grants & Donors)": crm_grant_donor_sync,
+    "PDF Grant Exporter": pdf_grant_exporter,
     
 }
 
