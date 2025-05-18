@@ -1,3 +1,5 @@
+import usage_alerts_auto
+import contract_alerts_auto
 import platform_guidebook_writer
 import board_pdf_exporter
 import finance_feed_connector
@@ -201,6 +203,8 @@ TOOLS = {
     "Board PDF Exporter": board_pdf_exporter,
     "Finance Feed Connector": finance_feed_connector,
     "Platform Guidebook": platform_guidebook_writer,
+    "Surface Gap Alerts": usage_alerts_auto,
+    "Sponsor Contract Alerts": contract_alerts_auto,
     
 }
 
