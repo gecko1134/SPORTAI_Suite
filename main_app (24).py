@@ -1,3 +1,8 @@
+import event_admin
+import surface_usage_by_type
+import governance_admin
+import governance_diagram
+import financial_feed_sync
 import sms_alert_center
 import real_time_dashboard
 import gsheets_sync
@@ -179,6 +184,11 @@ TOOLS = {
     "Real-Time Dashboard": real_time_dashboard,
     "Google Sheets Sync": gsheets_sync,
     "SMS Alert Center": sms_alert_center,
+    "Event Admin": event_admin,
+    "Surface Usage by Type": surface_usage_by_type,
+    "Governance Admin": governance_admin,
+    "Governance Diagram": governance_diagram,
+    "Financial Feed Sync": financial_feed_sync,
 }
 
 def run():
