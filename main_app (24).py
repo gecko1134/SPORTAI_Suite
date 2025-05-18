@@ -1,3 +1,4 @@
+import board_financial_summary
 import revenue_projection_simulator
 import sponsorship_revenue_builder
 import event_admin
@@ -193,6 +194,7 @@ TOOLS = {
     "Financial Feed Sync": financial_feed_sync,
     "Revenue Projection Simulator": revenue_projection_simulator,
     "Sponsorship Revenue Builder": sponsorship_revenue_builder,
+    "Board Financial Summary": board_financial_summary,
     
 }
 
