@@ -1,3 +1,5 @@
+import public_schedule
+import sponsor_map_viewer
 import ai_facility_chat
 import slack_alert_center
 import webhook_automation
@@ -221,6 +223,8 @@ TOOLS = {
     "Slack Alert Center": slack_alert_center,
     "Webhook Automation": webhook_automation,
     "AI Facility Chat": ai_facility_chat,
+    "Public Schedule": public_schedule,
+    "Sponsor Map Viewer": sponsor_map_viewer,
     
 }
 
