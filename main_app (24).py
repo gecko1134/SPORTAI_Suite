@@ -1,3 +1,5 @@
+import member_alerts_auto
+import credential_expiry_alerts
 import usage_alerts_auto
 import contract_alerts_auto
 import platform_guidebook_writer
@@ -205,6 +207,8 @@ TOOLS = {
     "Platform Guidebook": platform_guidebook_writer,
     "Surface Gap Alerts": usage_alerts_auto,
     "Sponsor Contract Alerts": contract_alerts_auto,
+    "Member Alerts Auto": member_alerts_auto,
+    "Credential Expiry Alerts": credential_expiry_alerts,
     
 }
 
