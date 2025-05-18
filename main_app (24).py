@@ -1,3 +1,8 @@
+import slack_alert_center
+import webhook_automation
+
+"Slack Alert Center": slack_alert_center,
+"Webhook Automation": webhook_automation,
 import admin_sidebar_badges
 import daily_task_scheduler
 import ai_voice_responder
@@ -215,6 +220,8 @@ TOOLS = {
     "Daily Task Scheduler": daily_task_scheduler,
     "Voice Assistant": ai_voice_responder,
     "Admin Sidebar Badges": admin_sidebar_badges,
+    "Slack Alert Center": slack_alert_center,
+    "Webhook Automation": webhook_automation,
     
 }
 
