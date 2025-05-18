@@ -1,3 +1,5 @@
+import park_activity_dashboard
+import surface_demand_heatmap
 import tournament_scheduler
 import international_team_portal
 import esports_manager
@@ -165,6 +167,8 @@ TOOLS = {
     "Adaptive Sports Center": adaptive_sports_center,
     "Tournament Scheduler": tournament_scheduler,
     "International Team Portal": international_team_portal,
+    "Park Activity Dashboard": park_activity_dashboard,
+    "Surface Demand Heatmap": surface_demand_heatmap,
 }
 
 def run():
