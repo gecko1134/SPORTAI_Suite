@@ -1,3 +1,5 @@
+import board_packet_pdf_generator
+import funding_narrative_sync
 import crm_pipeline_dashboard
 import board_report_scheduler
 import hubspot_deal_logger
@@ -305,6 +307,8 @@ TOOLS = {
     "HubSpot Deal Logger": hubspot_deal_logger,
     "CRM Pipeline Dashboard": crm_pipeline_dashboard,
     "Board Report Scheduler": board_report_scheduler,
+    "Board Packet Generator": board_packet_pdf_generator,
+    "Fundraising Narrative Sync": funding_narrative_sync,
 }
 
 def run():
