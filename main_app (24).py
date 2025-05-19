@@ -1,3 +1,5 @@
+import ai_sponsor_pricing_trends
+import sponsorship_inventory_limiter
 import crm_grant_donor_sync
 import pdf_grant_exporter
 import grant_alert_center
@@ -261,7 +263,8 @@ TOOLS = {
     "AI Grant Writer": grant_writer_ai,
     "CRM Sync (Grants & Donors)": crm_grant_donor_sync,
     "PDF Grant Exporter": pdf_grant_exporter,
-    
+    "AI Sponsor Pricing Trends": ai_sponsor_pricing_trends,
+    "Sponsor Inventory Limits": sponsorship_inventory_limiter,
 }
 
 def run():
