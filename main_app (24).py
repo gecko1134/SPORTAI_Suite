@@ -1,3 +1,5 @@
+import sponsor_pitchbook_builder
+import sponsor_proposal_pdf
 import ai_sponsor_pricing_trends
 import sponsorship_inventory_limiter
 import crm_grant_donor_sync
@@ -265,6 +267,8 @@ TOOLS = {
     "PDF Grant Exporter": pdf_grant_exporter,
     "AI Sponsor Pricing Trends": ai_sponsor_pricing_trends,
     "Sponsor Inventory Limits": sponsorship_inventory_limiter,
+    "AI Sponsorship Pitchbook": sponsor_pitchbook_builder,
+    "Sponsor Proposal PDF": sponsor_proposal_pdf,
 }
 
 def run():
