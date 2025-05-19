@@ -1,3 +1,5 @@
+import screen_rotation_scheduler
+import media_display_rotator
 import investor_pitch_portal
 import admin_override_console
 import expiring_link_manager
@@ -289,6 +291,8 @@ TOOLS = {
     "Admin Override Console": admin_override_console,
     "Investor Portal": investor_pitch_portal,
     "Admin Override Console": admin_override_console,
+    "Screen Scheduler": screen_rotation_scheduler,
+    "Media Rotator": media_display_rotator,
 }
 
 def run():
