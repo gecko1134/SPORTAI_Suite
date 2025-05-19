@@ -1,3 +1,5 @@
+import flipbook_pitch_creator
+import sponsor_pdf_packet
 import sponsor_pitchbook_builder
 import sponsor_proposal_pdf
 import ai_sponsor_pricing_trends
@@ -269,6 +271,8 @@ TOOLS = {
     "Sponsor Inventory Limits": sponsorship_inventory_limiter,
     "AI Sponsorship Pitchbook": sponsor_pitchbook_builder,
     "Sponsor Proposal PDF": sponsor_proposal_pdf,
+    "Flipbook Pitch Creator": flipbook_pitch_creator,
+    "Sponsor Packet PDF": sponsor_pdf_packet,
 }
 
 def run():
