@@ -1,3 +1,5 @@
+import crm_pipeline_dashboard
+import board_report_scheduler
 import hubspot_deal_logger
 import sponsor_pitch_portal
 import mailchimp_lead_collector
@@ -301,6 +303,8 @@ TOOLS = {
     "Sponsor Pitch Portal": sponsor_pitch_portal,
     "Mailchimp Lead Collector": mailchimp_lead_collector,
     "HubSpot Deal Logger": hubspot_deal_logger,
+    "CRM Pipeline Dashboard": crm_pipeline_dashboard,
+    "Board Report Scheduler": board_report_scheduler,
 }
 
 def run():
