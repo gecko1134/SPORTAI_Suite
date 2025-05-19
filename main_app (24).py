@@ -1,3 +1,4 @@
+import marketing_packet_builder
 import screen_rotation_scheduler
 import media_display_rotator
 import investor_pitch_portal
@@ -293,6 +294,7 @@ TOOLS = {
     "Admin Override Console": admin_override_console,
     "Screen Scheduler": screen_rotation_scheduler,
     "Media Rotator": media_display_rotator,
+    "Marketing Packet Builder": marketing_packet_builder,
 }
 
 def run():
