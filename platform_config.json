@@ -1,0 +1,13 @@
+
+{
+  "organization": "Venture North Sports Park",
+  "region": "Northern Minnesota",
+  "contact_email": "admin@venturenorth.org",
+  "modules_enabled": {
+    "sponsors": true,
+    "donors": true,
+    "grants": true,
+    "crm": true,
+    "board_reporting": true
+  }
+}

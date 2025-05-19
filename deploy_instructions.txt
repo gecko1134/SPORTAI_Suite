@@ -1,0 +1,17 @@
+
+Venture North Deployment Instructions
+
+1. Clone the repo or unzip the system package.
+2. Place `platform_config.json` into the root directory.
+3. Add secrets to Streamlit Cloud (or .streamlit/secrets.toml):
+   - TWILIO_ACCOUNT_SID, AUTH_TOKEN, PHONE
+   - SENDGRID_KEY, Stripe Checkout URLs
+4. Deploy via:
+   - Streamlit Cloud
+   - Local Streamlit
+   - GitHub + GCP or Heroku (optional)
+5. Customize brand header/logo in main_app.py or donation_landing_page.py
+6. Point QR and iframe links to public pages:
+   - donate.yourdomain.org
+   - sponsor.yourdomain.org
+   - investor.yourdomain.org
