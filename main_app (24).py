@@ -1,3 +1,5 @@
+import grant_renewal_manager
+import investor_kit_generator
 import board_packet_pdf_generator
 import funding_narrative_sync
 import crm_pipeline_dashboard
@@ -309,6 +311,8 @@ TOOLS = {
     "Board Report Scheduler": board_report_scheduler,
     "Board Packet Generator": board_packet_pdf_generator,
     "Fundraising Narrative Sync": funding_narrative_sync,
+    "Grant Renewal Tracker": grant_renewal_manager,
+    "Investor Kit Generator": investor_kit_generator,
 }
 
 def run():
