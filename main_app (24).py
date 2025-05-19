@@ -1,3 +1,4 @@
+import hubspot_deal_logger
 import sponsor_pitch_portal
 import mailchimp_lead_collector
 import marketing_packet_builder
@@ -299,6 +300,7 @@ TOOLS = {
     "Marketing Packet Builder": marketing_packet_builder,
     "Sponsor Pitch Portal": sponsor_pitch_portal,
     "Mailchimp Lead Collector": mailchimp_lead_collector,
+    "HubSpot Deal Logger": hubspot_deal_logger,
 }
 
 def run():
