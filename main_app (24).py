@@ -1,3 +1,4 @@
+import header_loader
 import fundraising_launch_center
 import grant_renewal_manager
 import investor_kit_generator
@@ -328,5 +329,6 @@ def run():
     selection = st.sidebar.selectbox('Choose a Tool', list(TOOLS.keys()))
     if selection in TOOLS:
         TOOLS[selection].run()
+        header_loader.run()
 
 run()
