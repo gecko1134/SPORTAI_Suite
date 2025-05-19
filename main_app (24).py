@@ -1,3 +1,5 @@
+import investor_pitch_portal
+import admin_override_console
 import expiring_link_manager
 import sponsor_link_sender
 import flipbook_pitch_creator
@@ -129,6 +131,7 @@ import trail_access_planner
 import visual_calendar_layout
 import volunteer_hub
 import weekly_report_generator
+
 
 with open('users.json') as f:
     users = json.load(f)
@@ -278,6 +281,8 @@ TOOLS = {
     "Sponsor Link Generator": sponsor_link_generator,
     "Expiring Link Generator": expiring_link_manager,
     "Sponsor Link Sender": sponsor_link_sender,
+    "Investor Portal": investor_pitch_portal,
+    "Admin Override Console": admin_override_console,
 }
 
 def run():
