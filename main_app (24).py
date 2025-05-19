@@ -1,4 +1,5 @@
-import sponsor_link_generator
+import expiring_link_manager
+import sponsor_link_sender
 import flipbook_pitch_creator
 import sponsor_pdf_packet
 import sponsor_pitchbook_builder
@@ -275,6 +276,8 @@ TOOLS = {
     "Flipbook Pitch Creator": flipbook_pitch_creator,
     "Sponsor Packet PDF": sponsor_pdf_packet,
     "Sponsor Link Generator": sponsor_link_generator,
+    "Expiring Link Generator": expiring_link_manager,
+    "Sponsor Link Sender": sponsor_link_sender,
 }
 
 def run():
