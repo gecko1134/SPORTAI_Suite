@@ -1,9 +1,8 @@
-# sportai_suite/main_app.py
+
 
 import os
 import sys
 
-# ensure the ai_modules folder is on Python’s import path
 BASE_DIR = os.path.dirname(__file__)
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
