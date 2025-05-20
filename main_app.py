@@ -1,3 +1,16 @@
+# sportai_suite/main_app.py
+
+import os
+import sys
+
+# ensure the ai_modules folder is on Python’s import path
+BASE_DIR = os.path.dirname(__file__)
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+import streamlit as st
+from ai_modules.demand_forecasting import DemandForecaster
+# …and the rest of your imports…
 import os
 import sys
 
