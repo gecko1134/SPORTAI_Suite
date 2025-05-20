@@ -1,3 +1,5 @@
+import member_selector
+import auto_contract_generator
 import header_loader
 import fundraising_launch_center
 import grant_renewal_manager
@@ -316,6 +318,8 @@ TOOLS = {
     "Grant Renewal Tracker": grant_renewal_manager,
     "Investor Kit Generator": investor_kit_generator,
     "Fundraising Launch Center": fundraising_launch_center,
+    "Membership Recommender": member_selector,
+    "Contract Generator": auto_contract_generator,
 }
 
 def run():
