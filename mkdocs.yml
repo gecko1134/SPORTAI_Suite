@@ -1,0 +1,12 @@
+site_name: SPORTAI Suite
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Modules:
+    - Scheduler: modules/ai_scheduler_tool.md
+    - Forecasting: modules/ai_event_forecast.md
+    - Chatbot: modules/ai_facility_chat.md
+    - Revenue AI: modules/ai_revenue_maximizer.md
+    - Matchmaker: modules/ai_matchmaker_tool.md
+    - Sponsorship: modules/ai_sponsor_opportunity_finder.md
