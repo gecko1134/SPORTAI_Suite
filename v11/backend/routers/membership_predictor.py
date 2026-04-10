@@ -28,11 +28,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -43,13 +42,11 @@ class MemberTier(str, enum.Enum):
     CHARTER    = "charter"      # Founding/legacy
     CORPORATE  = "corporate"    # Business accounts
 
-
 class ChurnRiskBand(str, enum.Enum):
     SAFE     = "safe"        # <10% churn probability
     WATCH    = "watch"       # 10–25%
     AT_RISK  = "at_risk"     # 25–50%
     CRITICAL = "critical"    # >50%
-
 
 class WinBackStatus(str, enum.Enum):
     PENDING   = "pending"
@@ -58,13 +55,11 @@ class WinBackStatus(str, enum.Enum):
     CONVERTED = "converted"
     EXPIRED   = "expired"
 
-
 class UpgradePropensity(str, enum.Enum):
     LOW      = "low"
     MEDIUM   = "medium"
     HIGH     = "high"
     VERY_HIGH = "very_high"
-
 
 # ── Tier config ───────────────────────────────────────────────────────────────
 
@@ -85,7 +80,6 @@ CHURN_RISK_WEIGHTS = {
     "feature_utilization":   0.15,
     "nps_score":             0.10,
 }
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -126,7 +120,6 @@ class MemberLTVScore(Base):
 
     win_back_sequences: Mapped[list["WinBackSequence"]] = relationship("WinBackSequence", back_populates="member_score", cascade="all, delete-orphan")
 
-
 class ChurnPrediction(Base):
     """Point-in-time churn prediction log — historical model output."""
     __tablename__ = "churn_predictions"
@@ -139,7 +132,6 @@ class ChurnPrediction(Base):
     churn_risk_band: Mapped[str] = mapped_column(SAEnum(ChurnRiskBand), nullable=False)
     feature_contributions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
 
 class WinBackSequence(Base):
     """Automated win-back outreach sequence for at-risk members."""
@@ -165,7 +157,6 @@ class WinBackSequence(Base):
 
     member_score: Mapped["MemberLTVScore"] = relationship("MemberLTVScore", back_populates="win_back_sequences")
 
-
 class MemberCohort(Base):
     """Cohort-level analysis — members grouped by join quarter and tier."""
     __tablename__ = "membership_cohorts"
@@ -181,7 +172,6 @@ class MemberCohort(Base):
     avg_monthly_revenue: Mapped[float] = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
 class WinBackCreate(BaseModel):
@@ -189,12 +179,10 @@ class WinBackCreate(BaseModel):
     offer_type: str
     offer_value: float = 0.0
 
-
 class LTVScoreUpdate(BaseModel):
     nps_score: Optional[int] = None
     days_since_last_visit: Optional[int] = None
     visits_last_30d: Optional[int] = None
-
 
 # ── Scoring functions ─────────────────────────────────────────────────────────
 
@@ -237,13 +225,11 @@ def _compute_churn_probability(
     p90 = round(min(0.95, p60 * 1.15), 3)
     return p30, p60, p90
 
-
 def _churn_band(p30: float) -> ChurnRiskBand:
     if p30 < 0.10:  return ChurnRiskBand.SAFE
     if p30 < 0.25:  return ChurnRiskBand.WATCH
     if p30 < 0.50:  return ChurnRiskBand.AT_RISK
     return ChurnRiskBand.CRITICAL
-
 
 def _compute_ltv(monthly_fee: float, p_churn_30: float, months_member: int) -> tuple[int, float, float]:
     """Compute LTV score, 12mo prediction, 36mo prediction."""
@@ -258,7 +244,6 @@ def _compute_ltv(monthly_fee: float, p_churn_30: float, months_member: int) -> t
     score = round(min(1000, (ltv_36 / tier_max_ltv) * 1000 + (months_member * 5)))
     return score, ltv_12, ltv_36
 
-
 def _upgrade_propensity(visits_30d: int, feature_util: float, tier: MemberTier) -> tuple[UpgradePropensity, Optional[MemberTier]]:
     if tier in [MemberTier.ELITE, MemberTier.CHARTER, MemberTier.CORPORATE]:
         return UpgradePropensity.LOW, None
@@ -272,12 +257,7 @@ def _upgrade_propensity(visits_30d: int, feature_util: float, tier: MemberTier) 
         return UpgradePropensity.MEDIUM, None
     return UpgradePropensity.LOW, None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -304,7 +284,6 @@ WIN_BACK_TEMPLATES = {
         "subject_line": "Come back to NXS — your next month is on us",
     },
 }
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -447,7 +426,6 @@ async def seed_membership_predictor(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── LTV Scores ────────────────────────────────────────────────────────────────
 
 @router.get("/ltv-scores", summary="Member LTV rankings — sorted by score or churn risk")
@@ -489,7 +467,6 @@ async def ltv_scores(
         for s in scores
     ]
 
-
 # ── Churn Risk ────────────────────────────────────────────────────────────────
 
 @router.get("/churn-risk", summary="At-risk and critical members with revenue exposure")
@@ -521,7 +498,6 @@ async def churn_risk_summary(db: AsyncSession = Depends(get_db)) -> dict:
         "overall_churn_rate_30d": round(sum(s.churn_probability_30d for s in all_scores) / len(all_scores), 3) if all_scores else 0,
     }
 
-
 # ── Win-Back ──────────────────────────────────────────────────────────────────
 
 @router.post("/win-back-sequence", summary="Generate personalized win-back sequence for a member")
@@ -550,7 +526,6 @@ async def generate_win_back(payload: WinBackCreate, db: AsyncSession = Depends(g
     await db.commit()
     return {"id": wb.id, "message": "Win-back sequence created"}
 
-
 @router.get("/win-back-sequences", summary="List all win-back sequences with status")
 async def list_win_back(
     status: Optional[WinBackStatus] = Query(None),
@@ -570,7 +545,6 @@ async def list_win_back(
         for s in sequences
     ]
 
-
 # ── Cohort Analysis ───────────────────────────────────────────────────────────
 
 @router.get("/cohort-analysis", summary="Cohort retention and LTV by join quarter and tier")
@@ -584,7 +558,6 @@ async def cohort_analysis(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "avg_monthly_revenue": c.avg_monthly_revenue}
         for c in cohorts
     ]
-
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
 
@@ -625,7 +598,6 @@ async def predictor_kpis(db: AsyncSession = Depends(get_db)) -> dict:
             for b in ChurnRiskBand
         },
     }
-
 
 # ── AI ────────────────────────────────────────────────────────────────────────
 

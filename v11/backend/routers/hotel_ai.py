@@ -26,11 +26,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -41,13 +40,11 @@ class RoomType(str, enum.Enum):
     ACCESSIBLE      = "accessible"
     TOURNAMENT_BLOCK = "tournament_block"   # bulk group rate
 
-
 class RoomStatus(str, enum.Enum):
     AVAILABLE   = "available"
     OCCUPIED    = "occupied"
     MAINTENANCE = "maintenance"
     BLOCKED     = "blocked"
-
 
 class BookingStatus(str, enum.Enum):
     CONFIRMED  = "confirmed"
@@ -56,14 +53,12 @@ class BookingStatus(str, enum.Enum):
     CANCELLED  = "cancelled"
     NO_SHOW    = "no_show"
 
-
 class RateStrategy(str, enum.Enum):
     STANDARD   = "standard"
     TOURNAMENT = "tournament"    # +25–40% during events
     PEAK       = "peak"          # holidays, high-demand
     RESCUE     = "rescue"        # <40% occupancy — discount
     GROUP      = "group"         # negotiated block
-
 
 # ── Base rates ─────────────────────────────────────────────────────────────────
 
@@ -86,7 +81,6 @@ STRATEGY_MULTIPLIERS = {
 TOTAL_ROOMS = 85
 TID_RATE    = 0.015   # 1.5% Tourism Improvement District assessment on room revenue
 
-
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
 class HotelRoom(Base):
@@ -106,7 +100,6 @@ class HotelRoom(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     reservations: Mapped[list["HotelReservation"]] = relationship("HotelReservation", back_populates="room", cascade="all, delete-orphan")
-
 
 class HotelReservation(Base):
     """Hotel reservation — tracks guest stay, rate, and revenue."""
@@ -138,7 +131,6 @@ class HotelReservation(Base):
     def tid_contribution(self) -> float:
         return round(self.total_revenue * TID_RATE, 2)
 
-
 class HotelRateCard(Base):
     """Date-range rate card — allows future rate planning by season/event."""
     __tablename__ = "hotel_rate_cards"
@@ -153,7 +145,6 @@ class HotelRateCard(Base):
     is_active: Mapped[bool]    = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 class HotelTIDLedger(Base):
     """Monthly TID assessment ledger — tracks tourism tax contributions."""
     __tablename__ = "hotel_tid_ledger"
@@ -167,7 +158,6 @@ class HotelTIDLedger(Base):
     occupancy_pct: Mapped[float]   = mapped_column(Float, nullable=False)
     revpar: Mapped[float]          = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime]   = mapped_column(DateTime(timezone=True), server_default=func.now())
-
 
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
@@ -185,11 +175,9 @@ class ReservationCreate(BaseModel):
     tournament_id: Optional[str] = None
     notes: Optional[str] = None
 
-
 class ReservationUpdate(BaseModel):
     status: Optional[BookingStatus] = None
     notes: Optional[str] = None
-
 
 class RateCardCreate(BaseModel):
     name: str
@@ -199,12 +187,7 @@ class RateCardCreate(BaseModel):
     multiplier: float
     reason: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -220,7 +203,6 @@ TID (Tourism Improvement District) assessment: 1.5% of room revenue.
 Duluth-Superior metro, Northeast Minnesota market. Tournament calendar drives demand spikes.
 Provide specific, data-driven revenue optimization recommendations.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -349,7 +331,6 @@ async def seed_hotel(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Rooms ─────────────────────────────────────────────────────────────────────
 
 @router.get("/rooms", summary="List all rooms with current status")
@@ -369,7 +350,6 @@ async def list_rooms(
          "max_occupancy": r.max_occupancy, "amenities": r.amenities}
         for r in rooms
     ]
-
 
 # ── Occupancy ─────────────────────────────────────────────────────────────────
 
@@ -418,7 +398,6 @@ async def occupancy_snapshot(db: AsyncSession = Depends(get_db)) -> dict:
         "occupancy_band": "HIGH" if occ_pct >= 75 else "MID" if occ_pct >= 45 else "LOW",
     }
 
-
 # ── Reservations ──────────────────────────────────────────────────────────────
 
 @router.get("/reservations", summary="List reservations with optional date range")
@@ -444,7 +423,6 @@ async def list_reservations(
          "tid_contribution": r.tid_contribution}
         for r in reservations
     ]
-
 
 @router.post("/reservations", summary="Create a new hotel reservation")
 async def create_reservation(payload: ReservationCreate, db: AsyncSession = Depends(get_db)) -> dict:
@@ -472,7 +450,6 @@ async def create_reservation(payload: ReservationCreate, db: AsyncSession = Depe
     return {"id": res.id, "rate_per_night": rate, "total_revenue": total,
             "tid_contribution": res.tid_contribution, "message": "Reservation created"}
 
-
 @router.patch("/reservations/{res_id}", summary="Update reservation status")
 async def update_reservation(res_id: str, payload: ReservationUpdate, db: AsyncSession = Depends(get_db)) -> dict:
     result = await db.execute(select(HotelReservation).where(HotelReservation.id == res_id))
@@ -483,7 +460,6 @@ async def update_reservation(res_id: str, payload: ReservationUpdate, db: AsyncS
         setattr(res, k, v)
     await db.commit()
     return {"id": res.id, "message": "Reservation updated"}
-
 
 # ── Revenue KPIs ──────────────────────────────────────────────────────────────
 
@@ -519,7 +495,6 @@ async def revpar_metrics(db: AsyncSession = Depends(get_db)) -> dict:
         "targets": {"annual_revenue": 1_100_000, "annual_occupancy_pct": 68.0, "target_adr": 119.0},
     }
 
-
 @router.get("/tid-ledger", summary="Monthly TID assessment history")
 async def tid_ledger(db: AsyncSession = Depends(get_db)) -> list[dict]:
     result = await db.execute(select(HotelTIDLedger).order_by(HotelTIDLedger.month))
@@ -529,7 +504,6 @@ async def tid_ledger(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "rooms_sold": l.rooms_sold, "adr": l.adr, "occupancy_pct": l.occupancy_pct, "revpar": l.revpar}
         for l in ledger
     ]
-
 
 @router.get("/rate-cards", summary="Active rate cards / seasonal pricing")
 async def list_rate_cards(db: AsyncSession = Depends(get_db)) -> list[dict]:
@@ -542,14 +516,12 @@ async def list_rate_cards(db: AsyncSession = Depends(get_db)) -> list[dict]:
         for c in cards
     ]
 
-
 @router.post("/rate-cards", summary="Create a rate card for a date range")
 async def create_rate_card(payload: RateCardCreate, db: AsyncSession = Depends(get_db)) -> dict:
     rc = HotelRateCard(**payload.model_dump())
     db.add(rc)
     await db.commit()
     return {"message": "Rate card created"}
-
 
 # ── AI Rate Recommendation ────────────────────────────────────────────────────
 
@@ -611,7 +583,6 @@ Generate a 3-paragraph rate recommendation:
         "future_reservations_14d": future_count,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-revenue-forecast", summary="AI 90-day revenue forecast")
 async def ai_revenue_forecast(db: AsyncSession = Depends(get_db)) -> dict:

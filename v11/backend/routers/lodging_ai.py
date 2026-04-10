@@ -26,11 +26,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -40,7 +39,6 @@ class UnitType(str, enum.Enum):
     TWO_BED      = "two_bedroom"
     THREE_BED    = "three_bedroom"
 
-
 class LeaseStatus(str, enum.Enum):
     ACTIVE     = "active"
     EXPIRING   = "expiring"      # ≤60 days remaining
@@ -48,20 +46,17 @@ class LeaseStatus(str, enum.Enum):
     VACANT     = "vacant"
     MAINTENANCE = "maintenance"
 
-
 class CampSiteType(str, enum.Enum):
     TENT         = "tent"
     RV_HOOKUP    = "rv_hookup"
     CABIN        = "cabin"
     GROUP        = "group"        # Large group/team site
 
-
 class Season(str, enum.Enum):
     SUMMER   = "summer"    # Jun–Aug — hiking, cycling
     FALL     = "fall"      # Sep–Oct — hiking, foliage
     WINTER   = "winter"    # Dec–Mar — snowmobile, ice fishing
     SPRING   = "spring"    # Apr–May — shoulder season
-
 
 CAMP_RATES = {
     CampSiteType.TENT:      {"summer": 28.0, "fall": 24.0, "winter": 18.0, "spring": 20.0},
@@ -84,7 +79,6 @@ TRAIL_CONNECTIONS = [
     {"name": "Jay Cooke State Park",          "type": "multi-use",   "miles_to_trailhead": 2.5},
 ]
 
-
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
 class ApartmentUnit(Base):
@@ -106,7 +100,6 @@ class ApartmentUnit(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     leases: Mapped[list["ApartmentLease"]] = relationship("ApartmentLease", back_populates="unit", cascade="all, delete-orphan")
-
 
 class ApartmentLease(Base):
     """Active or historical lease on an apartment unit."""
@@ -136,7 +129,6 @@ class ApartmentLease(Base):
     def is_expiring_soon(self) -> bool:
         return 0 < self.days_until_expiry <= 60
 
-
 class CampgroundSite(Base):
     """Individual campground site on the NXS campus."""
     __tablename__ = "campground_sites"
@@ -155,7 +147,6 @@ class CampgroundSite(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     reservations: Mapped[list["CampgroundReservation"]] = relationship("CampgroundReservation", back_populates="site", cascade="all, delete-orphan")
-
 
 class CampgroundReservation(Base):
     """Campground booking — nightly stays."""
@@ -179,7 +170,6 @@ class CampgroundReservation(Base):
 
     site: Mapped["CampgroundSite"] = relationship("CampgroundSite", back_populates="reservations")
 
-
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
 class LeaseCreate(BaseModel):
@@ -193,7 +183,6 @@ class LeaseCreate(BaseModel):
     deposit: float
     notes: Optional[str] = None
 
-
 class CampReservationCreate(BaseModel):
     site_id: str
     guest_name: str
@@ -204,7 +193,6 @@ class CampReservationCreate(BaseModel):
     trail_interest: Optional[str] = None
     is_team_group: bool = False
 
-
 def _get_season(d: date) -> Season:
     m = d.month
     if m in [6, 7, 8]:  return Season.SUMMER
@@ -212,12 +200,7 @@ def _get_season(d: date) -> Season:
     if m in [12, 1, 2, 3]: return Season.WINTER
     return Season.SPRING
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -232,7 +215,6 @@ NXS campus: 704 Kirkus St, Proctor MN. Campground serves tournament teams, trail
 Apartments provide stable monthly revenue for the NXS complex.
 Generate specific, actionable revenue and occupancy optimization insights.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -370,7 +352,6 @@ async def seed_lodging(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Apartments ────────────────────────────────────────────────────────────────
 
 @router.get("/apartments", summary="List all apartment units with lease status")
@@ -392,7 +373,6 @@ async def list_apartments(
         for u in units
     ]
 
-
 @router.get("/leases", summary="List current leases with expiry info")
 async def list_leases(
     expiring_soon: bool = Query(False),
@@ -411,7 +391,6 @@ async def list_leases(
         for l in leases
     ]
 
-
 @router.post("/leases", summary="Create a new lease")
 async def create_lease(payload: LeaseCreate, db: AsyncSession = Depends(get_db)) -> dict:
     unit_result = await db.execute(select(ApartmentUnit).where(ApartmentUnit.id == payload.unit_id))
@@ -423,7 +402,6 @@ async def create_lease(payload: LeaseCreate, db: AsyncSession = Depends(get_db))
     db.add(lease)
     await db.commit()
     return {"message": "Lease created"}
-
 
 @router.get("/rent-roll", summary="Monthly rent roll summary")
 async def rent_roll(db: AsyncSession = Depends(get_db)) -> dict:
@@ -456,7 +434,6 @@ async def rent_roll(db: AsyncSession = Depends(get_db)) -> dict:
         "type_breakdown": type_breakdown,
     }
 
-
 # ── Campground ────────────────────────────────────────────────────────────────
 
 @router.get("/campground", summary="List all campground sites")
@@ -476,7 +453,6 @@ async def list_campground(
          "rates": CAMP_RATES[s.site_type]}
         for s in sites
     ]
-
 
 @router.post("/campground/reserve", summary="Create a campground reservation")
 async def reserve_campsite(payload: CampReservationCreate, db: AsyncSession = Depends(get_db)) -> dict:
@@ -506,7 +482,6 @@ async def reserve_campsite(payload: CampReservationCreate, db: AsyncSession = De
     return {"id": res.id, "rate_per_night": rate, "total_revenue": res.total_revenue,
             "season": season, "message": "Campsite reserved"}
 
-
 @router.get("/campground/reservations", summary="Upcoming campground reservations")
 async def campground_reservations(
     days_ahead: int = Query(30),
@@ -527,7 +502,6 @@ async def campground_reservations(
         for r in reservations
     ]
 
-
 @router.get("/campground/seasonal-rates", summary="Campground rates by site type and season")
 async def seasonal_rates() -> dict:
     return {
@@ -540,7 +514,6 @@ async def seasonal_rates() -> dict:
             "spring": "Apr–May | Shoulder season, trail opening",
         }
     }
-
 
 # ── Revenue Rollup ────────────────────────────────────────────────────────────
 
@@ -579,7 +552,6 @@ async def revenue_rollup(db: AsyncSession = Depends(get_db)) -> dict:
             "annual_lodging_estimate": round(rent["annual_actual"] + camp_rev, 2),
         }
     }
-
 
 # ── AI Insights ───────────────────────────────────────────────────────────────
 

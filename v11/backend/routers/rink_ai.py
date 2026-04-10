@@ -27,11 +27,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -54,13 +53,11 @@ BASE_RATES = {
     "turf_off":       120.0,   # $/hr turf off-peak
 }
 
-
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
 class SurfaceType(str, enum.Enum):
     ICE  = "ice"
     TURF = "turf"
-
 
 class SessionCategory(str, enum.Enum):
     HOCKEY_PRIME    = "hockey_prime"
@@ -75,18 +72,15 @@ class SessionCategory(str, enum.Enum):
     MAINTENANCE     = "maintenance"
     DARK            = "dark"          # unbooked
 
-
 class BookingStatus(str, enum.Enum):
     CONFIRMED  = "confirmed"
     TENTATIVE  = "tentative"
     COMPLETED  = "completed"
     CANCELLED  = "cancelled"
 
-
 class ConversionDirection(str, enum.Enum):
     TURF_TO_ICE = "turf_to_ice"
     ICE_TO_TURF = "ice_to_turf"
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -111,7 +105,6 @@ class RinkSession(Base):
     notes: Mapped[Optional[str]]        = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime]        = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime]        = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
 
 class RinkLeagueBlock(Base):
     """Recurring league block — weekly guaranteed ice/turf time."""
@@ -144,7 +137,6 @@ class RinkLeagueBlock(Base):
     def total_participants(self) -> int:
         return self.teams * self.players_per_team
 
-
 class RinkConversionLog(Base):
     """Log of ice ↔ turf conversion events."""
     __tablename__ = "rink_conversion_log"
@@ -158,7 +150,6 @@ class RinkConversionLog(Base):
     completed: Mapped[bool]        = mapped_column(Boolean, default=True)
     notes: Mapped[Optional[str]]   = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime]   = mapped_column(DateTime(timezone=True), server_default=func.now())
-
 
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
@@ -175,7 +166,6 @@ class SessionCreate(BaseModel):
     contact_name: Optional[str] = None
     notes: Optional[str] = None
 
-
 class LeagueBlockCreate(BaseModel):
     league_name: str
     sport: str
@@ -191,12 +181,7 @@ class LeagueBlockCreate(BaseModel):
     contact_name: Optional[str] = None
     notes: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -213,7 +198,6 @@ Provide specific, revenue-focused scheduling and optimization insights.
 """
 
 DAY_NAMES = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -360,7 +344,6 @@ async def seed_rink(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Schedule ──────────────────────────────────────────────────────────────────
 
 @router.get("/schedule", summary="Rink schedule — date range with all sessions")
@@ -393,7 +376,6 @@ async def rink_schedule(
         for s in sessions
     ]
 
-
 @router.post("/sessions", summary="Book a new rink session")
 async def create_session(payload: SessionCreate, db: AsyncSession = Depends(get_db)) -> dict:
     start_dt = datetime.combine(date.today(), payload.start_time)
@@ -409,7 +391,6 @@ async def create_session(payload: SessionCreate, db: AsyncSession = Depends(get_
     await db.commit()
     await db.refresh(session)
     return {"id": session.id, "revenue": revenue, "message": "Session booked"}
-
 
 # ── Leagues ───────────────────────────────────────────────────────────────────
 
@@ -427,7 +408,6 @@ async def list_leagues(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "contact_name": l.contact_name}
         for l in leagues
     ]
-
 
 # ── Revenue & Utilization ─────────────────────────────────────────────────────
 
@@ -493,7 +473,6 @@ async def utilization(db: AsyncSession = Depends(get_db)) -> dict:
         "capacity": RINK_CAPACITY,
     }
 
-
 @router.get("/conversion-log", summary="Ice ↔ turf conversion history")
 async def conversion_log(db: AsyncSession = Depends(get_db)) -> list[dict]:
     result = await db.execute(select(RinkConversionLog).order_by(RinkConversionLog.conversion_date))
@@ -504,7 +483,6 @@ async def conversion_log(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "completed": l.completed, "notes": l.notes}
         for l in logs
     ]
-
 
 # ── AI ────────────────────────────────────────────────────────────────────────
 
@@ -554,7 +532,6 @@ Generate a 3-paragraph revenue optimization brief:
         "utilization": util,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-conversion-recommendation", summary="AI recommendation: keep ice or convert to turf?")
 async def ai_conversion_recommendation(

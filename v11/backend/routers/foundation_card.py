@@ -25,11 +25,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -39,14 +38,12 @@ class CardTier(str, enum.Enum):
     CORPORATE   = "corporate"     # $149–$199/yr (sponsorship-linked)
     CHARTER     = "charter"       # Founding member / legacy rate
 
-
 class MemberStatus(str, enum.Enum):
     ACTIVE    = "active"
     EXPIRED   = "expired"
     CANCELLED = "cancelled"
     TRIAL     = "trial"
     PENDING   = "pending"
-
 
 class RedemptionType(str, enum.Enum):
     EQUIPMENT_DISCOUNT   = "equipment_discount"
@@ -58,13 +55,11 @@ class RedemptionType(str, enum.Enum):
     GUEST_PASS           = "guest_pass"
     PRIORITY_BOOKING     = "priority_booking"
 
-
 class RenewalRisk(str, enum.Enum):
     LOW      = "low"
     MEDIUM   = "medium"
     HIGH     = "high"
     CRITICAL = "critical"
-
 
 # ── Tier config ───────────────────────────────────────────────────────────────
 
@@ -107,7 +102,6 @@ TIER_BENEFITS = {
         "Monthly leadership briefings with Shaun Marline",
     ],
 }
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -162,7 +156,6 @@ class FoundationCardMember(Base):
         redemption_score = min(self.redemptions_ytd / 12 * 40, 40)  # max 40 pts from monthly redemptions
         return round(visit_score + redemption_score, 1)
 
-
 class CardRedemption(Base):
     """Individual benefit redemption event."""
     __tablename__ = "card_redemptions"
@@ -177,7 +170,6 @@ class CardRedemption(Base):
 
     member: Mapped["FoundationCardMember"] = relationship("FoundationCardMember", back_populates="redemptions")
 
-
 class CardTierConfig(Base):
     """Live tier configuration — prices and member counts."""
     __tablename__ = "card_tiers"
@@ -190,7 +182,6 @@ class CardTierConfig(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool]    = mapped_column(Boolean, default=True)
     updated_at: Mapped[datetime]= mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
 
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
@@ -207,13 +198,11 @@ class MemberCreate(BaseModel):
     referred_by_id: Optional[str] = None
     notes: Optional[str] = None
 
-
 class RedemptionCreate(BaseModel):
     member_id: str
     redemption_type: RedemptionType
     value_redeemed: float = 0.0
     notes: Optional[str] = None
-
 
 class MemberUpdate(BaseModel):
     status: Optional[MemberStatus] = None
@@ -221,12 +210,7 @@ class MemberUpdate(BaseModel):
     visits_ytd: Optional[int] = None
     notes: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:  # pragma: no cover
-    raise NotImplementedError("Wire to your AsyncSession factory")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -241,7 +225,6 @@ The Foundation Card is a community membership program targeting 1,350 → 4,500 
 generating $416K/yr in revenue. Tiers: Individual $249, Family $399, Corporate $149–$199.
 Provide specific, data-driven insights focused on member retention, growth, and revenue pacing.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -335,7 +318,6 @@ async def seed_foundation_card(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Members ───────────────────────────────────────────────────────────────────
 
 @router.get("/members", summary="List members with filters")
@@ -379,7 +361,6 @@ async def list_members(
         for m in members
     ]
 
-
 @router.post("/enroll", summary="Enroll a new Foundation Card member")
 async def enroll_member(payload: MemberCreate, db: AsyncSession = Depends(get_db)) -> dict:
     today = date.today()
@@ -395,7 +376,6 @@ async def enroll_member(payload: MemberCreate, db: AsyncSession = Depends(get_db
     await db.refresh(member)
     return {"id": member.id, "full_name": member.full_name, "annual_fee": member.annual_fee, "message": "Member enrolled"}
 
-
 @router.patch("/members/{member_id}", summary="Update member status or risk")
 async def update_member(member_id: str, payload: MemberUpdate, db: AsyncSession = Depends(get_db)) -> dict:
     result = await db.execute(select(FoundationCardMember).where(FoundationCardMember.id == member_id))
@@ -406,7 +386,6 @@ async def update_member(member_id: str, payload: MemberUpdate, db: AsyncSession 
         setattr(member, k, v)
     await db.commit()
     return {"id": member.id, "message": "Member updated"}
-
 
 @router.post("/redeem", summary="Record a benefit redemption")
 async def record_redemption(payload: RedemptionCreate, db: AsyncSession = Depends(get_db)) -> dict:
@@ -420,7 +399,6 @@ async def record_redemption(payload: RedemptionCreate, db: AsyncSession = Depend
         member.last_activity_date = date.today()
     await db.commit()
     return {"message": "Redemption recorded"}
-
 
 # ── KPIs + Revenue ────────────────────────────────────────────────────────────
 
@@ -469,7 +447,6 @@ async def card_kpis(db: AsyncSession = Depends(get_db)) -> dict:
         "tier_breakdown": tier_breakdown,
     }
 
-
 @router.get("/revenue-pacing", summary="Monthly revenue pacing vs $416K/yr target")
 async def revenue_pacing(db: AsyncSession = Depends(get_db)) -> dict:
     kpis = await card_kpis(db)
@@ -487,7 +464,6 @@ async def revenue_pacing(db: AsyncSession = Depends(get_db)) -> dict:
         "projection_to_hit_target": _calc_needed_members(kpis),
     }
 
-
 def _calc_needed_members(kpis: dict) -> dict:
     gap = kpis["target_revenue"] - kpis["annual_revenue"]
     avg_fee = kpis["annual_revenue"] / kpis["active_members"] if kpis["active_members"] else 249.0
@@ -496,7 +472,6 @@ def _calc_needed_members(kpis: dict) -> dict:
         "avg_annual_fee": round(avg_fee, 2),
         "new_members_needed": max(0, round(gap / avg_fee)),
     }
-
 
 # ── Renewal Risk ──────────────────────────────────────────────────────────────
 
@@ -555,7 +530,6 @@ Generate a 3-paragraph renewal strategy brief:
         "generated_at": datetime.utcnow().isoformat(),
     }
 
-
 @router.post("/ai-growth-brief", summary="AI member growth and pipeline strategy")
 async def ai_growth_brief(db: AsyncSession = Depends(get_db)) -> dict:
     kpis = await card_kpis(db)
@@ -592,7 +566,6 @@ Generate a 3-paragraph growth strategy:
         "pacing_snapshot": pacing,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.get("/tier-benefits", summary="Return benefit list for all tiers")
 async def tier_benefits() -> dict:

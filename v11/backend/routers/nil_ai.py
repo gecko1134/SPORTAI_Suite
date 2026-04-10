@@ -24,11 +24,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from database import get_db
 
 # ── Shared Base (import from your models.domain if preferred) ─────────────────
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -44,14 +44,12 @@ class Sport(str, enum.Enum):
     MULTI_SPORT   = "multi_sport"
     OTHER         = "other"
 
-
 class DealStatus(str, enum.Enum):
     ACTIVE    = "active"
     PENDING   = "pending"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
     EXPIRED   = "expired"
-
 
 class DealType(str, enum.Enum):
     SOCIAL_MEDIA      = "social_media"
@@ -63,20 +61,17 @@ class DealType(str, enum.Enum):
     CONTENT_CREATION  = "content_creation"
     OTHER             = "other"
 
-
 class ComplianceStatus(str, enum.Enum):
     COMPLIANT       = "compliant"
     PENDING_REVIEW  = "pending_review"
     WARNING         = "warning"
     VIOLATION       = "violation"
 
-
 class GradeLevel(str, enum.Enum):
     FRESHMAN  = "9th"
     SOPHOMORE = "10th"
     JUNIOR    = "11th"
     SENIOR    = "12th"
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -118,7 +113,6 @@ class NILAthlete(Base):
     def active_deals(self) -> int:
         return sum(1 for d in self.deals if d.status == DealStatus.ACTIVE)
 
-
 class NILDeal(Base):
     """Brand deal or partnership for an NIL athlete."""
     __tablename__ = "nil_deals"
@@ -155,7 +149,6 @@ class NILDeal(Base):
             return False
         return self.end_date <= date.today() + timedelta(days=30)
 
-
 class NILComplianceEvent(Base):
     """Compliance audit log — tracks state rule adherence for each athlete."""
     __tablename__ = "nil_compliance_events"
@@ -170,7 +163,6 @@ class NILComplianceEvent(Base):
     created_at: Mapped[datetime]          = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     athlete: Mapped["NILAthlete"] = relationship("NILAthlete", back_populates="compliance_events")
-
 
 # ── Pydantic Schemas ──────────────────────────────────────────────────────────
 
@@ -188,7 +180,6 @@ class AthleteCreate(BaseModel):
     bio: Optional[str] = None
     graduation_date: Optional[date] = None
 
-
 class DealCreate(BaseModel):
     athlete_id: str
     brand_name: str
@@ -202,7 +193,6 @@ class DealCreate(BaseModel):
     notes: Optional[str] = None
     contract_url: Optional[str] = None
 
-
 class DealUpdate(BaseModel):
     status: Optional[DealStatus] = None
     social_posts_completed: Optional[int] = None
@@ -210,20 +200,12 @@ class DealUpdate(BaseModel):
     notes: Optional[str] = None
     end_date: Optional[date] = None
 
-
 class ComplianceEventCreate(BaseModel):
     athlete_id: str
     event_type: str
     status: ComplianceStatus
     notes: Optional[str] = None
     due_date: Optional[date] = None
-
-
-# ── Database dependency (replace with your get_db) ────────────────────────────
-
-async def get_db() -> AsyncSession:  # pragma: no cover
-    raise NotImplementedError("Wire to your AsyncSession factory")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -238,7 +220,6 @@ flag football, soccer, lacrosse, volleyball, softball, basketball, pickleball, r
 NXS National Complex is at 704 Kirkus Street, Proctor MN. ED: Shaun Marline.
 Respond with specific, actionable insights. Keep briefs to 3 clear paragraphs.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -307,7 +288,6 @@ async def seed_nil(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Athletes ──────────────────────────────────────────────────────────────────
 
 @router.get("/athletes", summary="List all NIL athletes with deal summaries")
@@ -348,7 +328,6 @@ async def list_athletes(
         for a in athletes
     ]
 
-
 @router.post("/athletes", summary="Enroll a new NIL athlete")
 async def create_athlete(payload: AthleteCreate, db: AsyncSession = Depends(get_db)) -> dict:
     athlete = NILAthlete(**payload.model_dump())
@@ -356,7 +335,6 @@ async def create_athlete(payload: AthleteCreate, db: AsyncSession = Depends(get_
     await db.commit()
     await db.refresh(athlete)
     return {"id": athlete.id, "full_name": athlete.full_name, "message": "Athlete enrolled successfully"}
-
 
 @router.get("/athletes/{athlete_id}", summary="Get athlete detail with all deals")
 async def get_athlete(athlete_id: str, db: AsyncSession = Depends(get_db)) -> dict:
@@ -412,7 +390,6 @@ async def get_athlete(athlete_id: str, db: AsyncSession = Depends(get_db)) -> di
         ],
     }
 
-
 # ── Deals ─────────────────────────────────────────────────────────────────────
 
 @router.get("/deals", summary="List all deals with optional filters")
@@ -450,7 +427,6 @@ async def list_deals(
         for d in deals
     ]
 
-
 @router.post("/deals", summary="Log a new brand deal")
 async def create_deal(payload: DealCreate, db: AsyncSession = Depends(get_db)) -> dict:
     deal = NILDeal(**payload.model_dump())
@@ -458,7 +434,6 @@ async def create_deal(payload: DealCreate, db: AsyncSession = Depends(get_db)) -
     await db.commit()
     await db.refresh(deal)
     return {"id": deal.id, "message": "Deal logged successfully"}
-
 
 @router.patch("/deals/{deal_id}", summary="Update deal progress or status")
 async def update_deal(deal_id: str, payload: DealUpdate, db: AsyncSession = Depends(get_db)) -> dict:
@@ -470,7 +445,6 @@ async def update_deal(deal_id: str, payload: DealUpdate, db: AsyncSession = Depe
         setattr(deal, k, v)
     await db.commit()
     return {"id": deal.id, "message": "Deal updated"}
-
 
 # ── Compliance ────────────────────────────────────────────────────────────────
 
@@ -507,14 +481,12 @@ async def compliance_alerts(db: AsyncSession = Depends(get_db)) -> dict:
         }
     }
 
-
 @router.post("/compliance", summary="Log a compliance event")
 async def log_compliance(payload: ComplianceEventCreate, db: AsyncSession = Depends(get_db)) -> dict:
     event = NILComplianceEvent(**payload.model_dump())
     db.add(event)
     await db.commit()
     return {"message": "Compliance event logged"}
-
 
 # ── Program KPIs ──────────────────────────────────────────────────────────────
 
@@ -544,7 +516,6 @@ async def nil_kpis(db: AsyncSession = Depends(get_db)) -> dict:
         "deals_expiring_soon": expiring,
         "sports_breakdown": sports_breakdown,
     }
-
 
 # ── AI Brief ──────────────────────────────────────────────────────────────────
 
@@ -590,7 +561,6 @@ Generate a 3-paragraph NIL Program brief covering:
         "brief": response.content[0].text,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-program-brief", summary="Generate program-level NIL strategy brief")
 async def program_ai_brief(db: AsyncSession = Depends(get_db)) -> dict:

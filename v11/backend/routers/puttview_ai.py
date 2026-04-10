@@ -27,11 +27,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -57,7 +56,6 @@ KNOWN_COMPETITORS = [
     {"name": "Fargo Golf Center",        "city": "Fargo",        "state": "ND", "distance_miles": 193, "has_ar": False},
 ]
 
-
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
 class SessionMode(str, enum.Enum):
@@ -68,13 +66,11 @@ class SessionMode(str, enum.Enum):
     EVENT      = "event"
     TOURNAMENT = "tournament"
 
-
 class SkillLevel(str, enum.Enum):
     BEGINNER     = "beginner"
     INTERMEDIATE = "intermediate"
     ADVANCED     = "advanced"
     PROFESSIONAL = "professional"
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -104,7 +100,6 @@ class PuttViewSession(Base):
             return round((self.putts_made or 0) / self.putts_attempted * 100, 1)
         return None
 
-
 class PuttViewRevenueLedger(Base):
     """Monthly revenue ledger — actuals vs target."""
     __tablename__ = "puttview_revenue_ledger"
@@ -118,7 +113,6 @@ class PuttViewRevenueLedger(Base):
     utilization_pct: Mapped[float]= mapped_column(Float, nullable=False)
     created_at: Mapped[datetime]  = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 class PuttViewROISnapshot(Base):
     """Periodic ROI calculation snapshots."""
     __tablename__ = "puttview_roi_snapshots"
@@ -131,7 +125,6 @@ class PuttViewROISnapshot(Base):
     roi_pct: Mapped[float]            = mapped_column(Float, nullable=False)
     months_operational: Mapped[int]   = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now())
-
 
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
@@ -148,12 +141,7 @@ class SessionCreate(BaseModel):
     putts_made: Optional[int] = None
     notes: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -168,7 +156,6 @@ Investment: $280,000 | Annual revenue target: $153,000 | Target ROI: 137%
 NXS National Complex at 704 Kirkus St, Proctor MN — part of the NGP Development Phase 2.
 Provide data-driven optimization insights focused on ROI achievement and exclusivity leverage.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -262,7 +249,6 @@ async def seed_puttview(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Sessions ──────────────────────────────────────────────────────────────────
 
 @router.get("/sessions", summary="List PuttView sessions")
@@ -287,7 +273,6 @@ async def list_sessions(
         for s in sessions
     ]
 
-
 @router.post("/sessions", summary="Log a new PuttView session")
 async def create_session(payload: SessionCreate, db: AsyncSession = Depends(get_db)) -> dict:
     if payload.bay_number not in range(1, PUTTVIEW_BAYS + 1):
@@ -304,7 +289,6 @@ async def create_session(payload: SessionCreate, db: AsyncSession = Depends(get_
     await db.commit()
     return {"id": session.id, "revenue": revenue, "message": "Session logged"}
 
-
 # ── Revenue & ROI ──────────────────────────────────────────────────────────────
 
 @router.get("/revenue-ledger", summary="Monthly revenue ledger vs target")
@@ -318,7 +302,6 @@ async def revenue_ledger(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "bays_active": l.bays_active, "utilization_pct": l.utilization_pct}
         for l in ledger
     ]
-
 
 @router.get("/roi-dashboard", summary="Live ROI dashboard vs 137% target")
 async def roi_dashboard(db: AsyncSession = Depends(get_db)) -> dict:
@@ -372,7 +355,6 @@ async def roi_dashboard(db: AsyncSession = Depends(get_db)) -> dict:
         "on_track_for_target": projected_roi >= TARGET_ROI_PCT * 0.80,
     }
 
-
 @router.get("/exclusivity-radius", summary="Exclusivity zone — 200-mile competitor map")
 async def exclusivity_radius() -> dict:
     within_zone = [c for c in KNOWN_COMPETITORS if c["distance_miles"] < EXCLUSIVITY_RADIUS_MILES and not c.get("has_ar", False)]
@@ -390,7 +372,6 @@ async def exclusivity_radius() -> dict:
         "zone_threat_level": "LOW",
         "zone_summary": f"NXS holds exclusive PuttView AR rights within {EXCLUSIVITY_RADIUS_MILES} miles. {len(within_zone)} golf venues within zone, none with AR technology.",
     }
-
 
 # ── AI ────────────────────────────────────────────────────────────────────────
 
@@ -445,7 +426,6 @@ Generate a 3-paragraph optimization brief:
         "roi_snapshot": roi,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.get("/kpis", summary="PuttView top-line KPIs")
 async def puttview_kpis(db: AsyncSession = Depends(get_db)) -> dict:

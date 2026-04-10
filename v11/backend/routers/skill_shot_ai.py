@@ -26,11 +26,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -41,7 +40,6 @@ class BayStatus(str, enum.Enum):
     OPERATIONAL  = "operational"
     MAINTENANCE  = "maintenance"
 
-
 class SessionType(str, enum.Enum):
     INDIVIDUAL   = "individual"
     GROUP        = "group"
@@ -50,14 +48,12 @@ class SessionType(str, enum.Enum):
     CORPORATE    = "corporate"
     SIMULATOR    = "simulator"
 
-
 class MilestoneStatus(str, enum.Enum):
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     COMPLETED   = "completed"
     AT_RISK     = "at_risk"
     BLOCKED     = "blocked"
-
 
 class CapitalSource(str, enum.Enum):
     SBA_504        = "sba_504"
@@ -66,7 +62,6 @@ class CapitalSource(str, enum.Enum):
     CROWDFUNDING   = "crowdfunding"
     OPERATING      = "operating_cash"
     OTHER          = "other"
-
 
 # ── Capital plan ───────────────────────────────────────────────────────────────
 
@@ -89,7 +84,6 @@ BAY_RATE = {
     SessionType.SIMULATOR:  50.0,   # $/hr
 }
 
-
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
 class SkillShotBay(Base):
@@ -109,7 +103,6 @@ class SkillShotBay(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     sessions: Mapped[list["SkillShotSession"]] = relationship("SkillShotSession", back_populates="bay", cascade="all, delete-orphan")
-
 
 class SkillShotSession(Base):
     """Booked session in a TrackMan bay."""
@@ -131,7 +124,6 @@ class SkillShotSession(Base):
 
     bay: Mapped["SkillShotBay"] = relationship("SkillShotBay", back_populates="sessions")
 
-
 class SkillShotMilestone(Base):
     """Phase 2 launch milestone tracking."""
     __tablename__ = "skill_shot_milestones"
@@ -148,7 +140,6 @@ class SkillShotMilestone(Base):
     blockers: Mapped[Optional[str]]        = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime]           = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime]           = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
 
 class SkillShotCapital(Base):
     """Capital source tracking — committed, received, deployed."""
@@ -173,7 +164,6 @@ class SkillShotCapital(Base):
     def gap(self) -> float:
         return round(self.target_amount - self.committed_amount, 2)
 
-
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
 class SessionCreate(BaseModel):
@@ -187,14 +177,12 @@ class SessionCreate(BaseModel):
     is_member: bool = False
     notes: Optional[str] = None
 
-
 class MilestoneUpdate(BaseModel):
     status: Optional[MilestoneStatus] = None
     progress_pct: Optional[int] = None
     completed_date: Optional[date] = None
     blockers: Optional[str] = None
     notes: Optional[str] = None
-
 
 class CapitalUpdate(BaseModel):
     committed_amount: Optional[float] = None
@@ -203,12 +191,7 @@ class CapitalUpdate(BaseModel):
     status: Optional[str] = None
     notes: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -224,7 +207,6 @@ NGP Development is the entity. NXS National Complex is the operating campus.
 Year 3 launch (relative to NXS Phase 1 operational start).
 Provide specific, investor-quality strategic insights and launch readiness assessments.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -336,7 +318,6 @@ async def seed_skill_shot(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Bays ──────────────────────────────────────────────────────────────────────
 
 @router.get("/bays", summary="List all 10 TrackMan bays with status")
@@ -351,7 +332,6 @@ async def list_bays(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "sessions_total": b.sessions_total, "revenue_total": round(b.revenue_total, 2)}
         for b in bays
     ]
-
 
 # ── Sessions ──────────────────────────────────────────────────────────────────
 
@@ -376,7 +356,6 @@ async def list_sessions(
         for s in sessions
     ]
 
-
 @router.post("/sessions", summary="Book a new session")
 async def create_session(payload: SessionCreate, db: AsyncSession = Depends(get_db)) -> dict:
     rate = BAY_RATE[payload.session_type]
@@ -386,7 +365,6 @@ async def create_session(payload: SessionCreate, db: AsyncSession = Depends(get_
     db.add(session)
     await db.commit()
     return {"id": session.id, "revenue": revenue, "message": "Session booked"}
-
 
 # ── Milestones ────────────────────────────────────────────────────────────────
 
@@ -406,7 +384,6 @@ async def list_milestones(phase: Optional[int] = Query(None), db: AsyncSession =
         for m in milestones
     ]
 
-
 @router.patch("/milestones/{milestone_id}", summary="Update milestone status")
 async def update_milestone(milestone_id: str, payload: MilestoneUpdate, db: AsyncSession = Depends(get_db)) -> dict:
     result = await db.execute(select(SkillShotMilestone).where(SkillShotMilestone.id == milestone_id))
@@ -417,7 +394,6 @@ async def update_milestone(milestone_id: str, payload: MilestoneUpdate, db: Asyn
         setattr(m, k, v)
     await db.commit()
     return {"id": m.id, "message": "Milestone updated"}
-
 
 # ── Capital Stack ─────────────────────────────────────────────────────────────
 
@@ -450,7 +426,6 @@ async def capital_stack(db: AsyncSession = Depends(get_db)) -> dict:
         ],
     }
 
-
 @router.patch("/capital/{source_key}", summary="Update capital source progress")
 async def update_capital(source_key: str, payload: CapitalUpdate, db: AsyncSession = Depends(get_db)) -> dict:
     try:
@@ -465,7 +440,6 @@ async def update_capital(source_key: str, payload: CapitalUpdate, db: AsyncSessi
         setattr(cap, k, v)
     await db.commit()
     return {"message": "Capital source updated"}
-
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
 
@@ -515,7 +489,6 @@ async def ss_overview(db: AsyncSession = Depends(get_db)) -> dict:
         "readiness_breakdown": readiness_components,
         "investment_total": TOTAL_INVESTMENT,
     }
-
 
 # ── AI Endpoints ──────────────────────────────────────────────────────────────
 
@@ -572,7 +545,6 @@ Generate a 3-paragraph investor-quality launch brief:
         "overview": overview,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-investor-brief", summary="AI investor-facing Skill Shot Academy narrative")
 async def ai_investor_brief(db: AsyncSession = Depends(get_db)) -> dict:

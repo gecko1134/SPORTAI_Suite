@@ -25,11 +25,10 @@ from pydantic import BaseModel
 from sqlalchemy import Float, DateTime, Enum as SAEnum, Integer, String, Text, Boolean, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -43,20 +42,17 @@ class OpportunityType(str, enum.Enum):
     UPSELL             = "upsell"
     NEW_PROGRAM        = "new_program"
 
-
 class OpportunityPriority(str, enum.Enum):
     CRITICAL = "critical"
     HIGH     = "high"
     MEDIUM   = "medium"
     LOW      = "low"
 
-
 class OpportunityStatus(str, enum.Enum):
     OPEN       = "open"
     IN_PROGRESS = "in_progress"
     RESOLVED   = "resolved"
     DISMISSED  = "dismissed"
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -78,7 +74,6 @@ class RevenueOpportunity(Base):
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[Optional[str]]   = mapped_column(Text, nullable=True)
 
-
 class RevenueActionLog(Base):
     """Log of actions taken on revenue opportunities."""
     __tablename__ = "revenue_actions_log"
@@ -90,13 +85,11 @@ class RevenueActionLog(Base):
     logged_by: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     logged_at: Mapped[datetime]   = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
 class OpportunityUpdate(BaseModel):
     status: Optional[OpportunityStatus] = None
     notes: Optional[str] = None
-
 
 class ActionCreate(BaseModel):
     opportunity_id: str
@@ -104,12 +97,7 @@ class ActionCreate(BaseModel):
     revenue_impact: Optional[float] = None
     logged_by: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -265,7 +253,6 @@ STATIC_OPPORTUNITIES = [
     },
 ]
 
-
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
 @router.post("/seed", summary="Seed 13 AI-identified revenue opportunities")
@@ -284,7 +271,6 @@ async def seed_opportunities(db: AsyncSession = Depends(get_db)) -> dict:
         "total_annual_impact": sum(o["estimated_annual_impact"] for o in STATIC_OPPORTUNITIES),
         "seeded": True,
     }
-
 
 # ── Revenue Score ─────────────────────────────────────────────────────────────
 
@@ -325,7 +311,6 @@ async def revenue_score(db: AsyncSession = Depends(get_db)) -> dict:
         "score_calculation": f"100 - ({critical} critical × 15) - ({high} high × 6) - ({medium} medium × 2) = {score}",
     }
 
-
 # ── Opportunities ─────────────────────────────────────────────────────────────
 
 @router.get("/opportunities", summary="All revenue opportunities ranked by impact")
@@ -353,7 +338,6 @@ async def list_opportunities(
         for o in opps
     ]
 
-
 @router.patch("/opportunities/{opp_id}", summary="Update opportunity status")
 async def update_opportunity(opp_id: str, payload: OpportunityUpdate, db: AsyncSession = Depends(get_db)) -> dict:
     from fastapi import HTTPException
@@ -369,7 +353,6 @@ async def update_opportunity(opp_id: str, payload: OpportunityUpdate, db: AsyncS
         opp.notes = payload.notes
     await db.commit()
     return {"id": opp.id, "message": "Opportunity updated"}
-
 
 # ── Pricing Gaps ──────────────────────────────────────────────────────────────
 
@@ -438,7 +421,6 @@ async def pricing_gaps() -> list[dict]:
             "action": "Report $67.5K in facility scholarship value in IRRRB/LCCMR grant applications",
         },
     ]
-
 
 # ── Cross-Sell ────────────────────────────────────────────────────────────────
 
@@ -527,7 +509,6 @@ async def cross_sell_map() -> list[dict]:
         },
     ]
 
-
 # ── Weekly Brief ──────────────────────────────────────────────────────────────
 
 @router.post("/weekly-brief", summary="AI weekly revenue optimization brief")
@@ -586,7 +567,6 @@ Generate a concise, executive 3-paragraph weekly brief:
         "generated_at": datetime.utcnow().isoformat(),
     }
 
-
 @router.post("/ai-module-deep-dive", summary="Deep-dive revenue analysis for a specific module")
 async def module_deep_dive(
     module: str = Query(..., description="Module name: hotel, rink, fnb, puttview, skill_shot, academic, campground, nil, foundation_card"),
@@ -632,7 +612,6 @@ Generate a focused 2-paragraph revenue brief for this module:
         "generated_at": datetime.utcnow().isoformat(),
     }
 
-
 # ── Action Log ────────────────────────────────────────────────────────────────
 
 @router.post("/actions", summary="Log an action taken on an opportunity")
@@ -641,7 +620,6 @@ async def log_action(payload: ActionCreate, db: AsyncSession = Depends(get_db)) 
     db.add(action)
     await db.commit()
     return {"message": "Action logged"}
-
 
 @router.get("/actions", summary="List logged revenue actions")
 async def list_actions(db: AsyncSession = Depends(get_db)) -> list[dict]:

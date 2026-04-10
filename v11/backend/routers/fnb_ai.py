@@ -27,11 +27,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -47,7 +46,6 @@ PER_CAP_TARGETS = {
     "concession_only":   6.0,   # $/attendee concession-only events
 }
 
-
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
 class VenueType(str, enum.Enum):
@@ -56,7 +54,6 @@ class VenueType(str, enum.Enum):
     FOOD_TRUCK_PLAZA = "food_truck_plaza"
     CATERING_KITCHEN = "catering_kitchen"
     BAR_LOUNGE       = "bar_lounge"
-
 
 class EventType(str, enum.Enum):
     TOURNAMENT      = "tournament"
@@ -67,20 +64,17 @@ class EventType(str, enum.Enum):
     CAMP_DAY        = "camp_day"
     OPEN_PLAY       = "open_play"
 
-
 class FoodTruckStatus(str, enum.Enum):
     SCHEDULED   = "scheduled"
     ACTIVE      = "active"
     COMPLETED   = "completed"
     CANCELLED   = "cancelled"
 
-
 class CateringStatus(str, enum.Enum):
     INQUIRY    = "inquiry"
     CONFIRMED  = "confirmed"
     COMPLETED  = "completed"
     CANCELLED  = "cancelled"
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -99,7 +93,6 @@ class FnBVenue(Base):
     created_at: Mapped[datetime]           = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     events: Mapped[list["FnBEvent"]] = relationship("FnBEvent", back_populates="venue", cascade="all, delete-orphan")
-
 
 class FnBEvent(Base):
     """F&B revenue event — tied to facility activity."""
@@ -123,7 +116,6 @@ class FnBEvent(Base):
 
     venue: Mapped["FnBVenue"] = relationship("FnBVenue", back_populates="events")
 
-
 class FoodTruckSchedule(Base):
     """Food truck plaza scheduling."""
     __tablename__ = "fnb_food_truck_schedule"
@@ -142,7 +134,6 @@ class FoodTruckSchedule(Base):
     notes: Mapped[Optional[str]]  = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime]  = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 class FnBRevenueLedger(Base):
     """Monthly F&B revenue summary ledger."""
     __tablename__ = "fnb_revenue_ledger"
@@ -159,7 +150,6 @@ class FnBRevenueLedger(Base):
     avg_per_cap: Mapped[float]           = mapped_column(Float, default=0.0)
     created_at: Mapped[datetime]         = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
 class EventCreate(BaseModel):
@@ -174,7 +164,6 @@ class EventCreate(BaseModel):
     sponsor_contribution: float = 0.0
     notes: Optional[str] = None
 
-
 class FoodTruckCreate(BaseModel):
     truck_name: str
     operator_name: str
@@ -186,12 +175,7 @@ class FoodTruckCreate(BaseModel):
     linked_event_id: Optional[str] = None
     notes: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -207,7 +191,6 @@ Tournament days drive the highest per-cap spend ($18+). League nights average $1
 Food truck plaza sponsorships: $10K–$50K/year per sponsor.
 Revenue is tightly correlated with facility event calendar — tournament, league, and camp activity.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -363,7 +346,6 @@ async def seed_fnb(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Venues ────────────────────────────────────────────────────────────────────
 
 @router.get("/venues", summary="All F&B venues with operational status")
@@ -377,7 +359,6 @@ async def list_venues(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "description": v.description}
         for v in venues
     ]
-
 
 # ── Events ────────────────────────────────────────────────────────────────────
 
@@ -406,7 +387,6 @@ async def list_events(
         for e in events
     ]
 
-
 @router.post("/events", summary="Log an F&B event")
 async def create_event(payload: EventCreate, db: AsyncSession = Depends(get_db)) -> dict:
     per_cap = payload.per_cap_spend or PER_CAP_TARGETS.get(payload.event_type.value, 9.0)
@@ -419,7 +399,6 @@ async def create_event(payload: EventCreate, db: AsyncSession = Depends(get_db))
     db.add(event)
     await db.commit()
     return {"id": event.id, "gross_revenue": gross, "net_revenue": net, "message": "Event logged"}
-
 
 # ── Food Trucks ───────────────────────────────────────────────────────────────
 
@@ -442,7 +421,6 @@ async def food_truck_schedule(
         for t in trucks
     ]
 
-
 @router.post("/food-trucks", summary="Schedule a food truck appearance")
 async def schedule_food_truck(payload: FoodTruckCreate, db: AsyncSession = Depends(get_db)) -> dict:
     if payload.spot_number not in range(1, FOOD_TRUCK_SPOTS + 1):
@@ -451,7 +429,6 @@ async def schedule_food_truck(payload: FoodTruckCreate, db: AsyncSession = Depen
     db.add(truck)
     await db.commit()
     return {"message": "Food truck scheduled", "plaza_fee": payload.plaza_fee}
-
 
 # ── Revenue KPIs ──────────────────────────────────────────────────────────────
 
@@ -509,7 +486,6 @@ async def revenue_summary(db: AsyncSession = Depends(get_db)) -> dict:
         "monthly_ledger": [{"month": l.month, "total_revenue": l.total_revenue, "events": l.total_events, "attendees": l.total_attendees, "avg_per_cap": l.avg_per_cap} for l in ledger],
     }
 
-
 # ── AI ────────────────────────────────────────────────────────────────────────
 
 @router.post("/ai-revenue-forecast", summary="AI F&B revenue forecast and optimization")
@@ -559,7 +535,6 @@ Generate a 3-paragraph forecast:
         "summary": summary,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-event-day-plan", summary="AI event-day F&B activation plan")
 async def ai_event_day_plan(

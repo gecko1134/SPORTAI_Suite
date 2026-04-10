@@ -26,11 +26,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Campus constants ──────────────────────────────────────────────────────────
 
@@ -65,7 +64,6 @@ ZONE_IDS = {z["zone_id"] for z in CAMPUS_ZONES}
 TOTAL_INDOOR_SQFT = 171_700 + 36_100 + 15_700   # 223,500
 TOTAL_CAMPUS_SQFT = sum(z["sqft"] for z in CAMPUS_ZONES)
 
-
 class FacilityZone(Base):
     """NXS campus zone with utilization tracking."""
     __tablename__ = "facility_zones"
@@ -87,7 +85,6 @@ class FacilityZone(Base):
     created_at: Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime]      = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-
 class LayoutScenario(Base):
     """Alternative layout configuration for revenue comparison."""
     __tablename__ = "layout_scenarios"
@@ -105,7 +102,6 @@ class LayoutScenario(Base):
     status: Mapped[str]          = mapped_column(String(20), default="draft")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 class SpaceUtilizationSnapshot(Base):
     """Weekly utilization snapshot per zone — historical tracking."""
     __tablename__ = "space_utilization_snapshots"
@@ -118,12 +114,7 @@ class SpaceUtilizationSnapshot(Base):
     revenue: Mapped[float]       = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -138,7 +129,6 @@ Total indoor: 223,500 sqft. Revenue target: $1.847M Phase 1 + Phase 2 additions.
 Optimize for: revenue per sqft, utilization rate, sport mix balance, peak-hour demand.
 ISG Engineering Project #24688001. Provide specific, dollar-quantified layout recommendations.
 """
-
 
 @router.post("/seed", summary="Seed facility zones and utilization data")
 async def seed_layout(db: AsyncSession = Depends(get_db)) -> dict:
@@ -253,7 +243,6 @@ async def seed_layout(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 @router.get("/zones", summary="All campus zones with utilization and revenue metrics")
 async def list_zones(
     area: Optional[str] = Query(None),
@@ -273,7 +262,6 @@ async def list_zones(
          "peak_hours": z.peak_hours}
         for z in zones
     ]
-
 
 @router.get("/utilization-heatmap", summary="Heatmap data — utilization by zone and hour-of-day")
 async def utilization_heatmap(db: AsyncSession = Depends(get_db)) -> dict:
@@ -335,7 +323,6 @@ async def utilization_heatmap(db: AsyncSession = Depends(get_db)) -> dict:
         "total_campus_sqft": TOTAL_CAMPUS_SQFT,
     }
 
-
 @router.get("/revenue-per-sqft", summary="Revenue per sqft analysis — ranked by efficiency")
 async def revenue_per_sqft(db: AsyncSession = Depends(get_db)) -> dict:
     result = await db.execute(select(FacilityZone).where(FacilityZone.is_active == True).order_by(FacilityZone.revenue_per_sqft_annual.desc()))
@@ -373,7 +360,6 @@ async def revenue_per_sqft(db: AsyncSession = Depends(get_db)) -> dict:
         ],
     }
 
-
 @router.get("/scenarios", summary="Layout configuration scenarios")
 async def list_scenarios(db: AsyncSession = Depends(get_db)) -> list[dict]:
     result = await db.execute(select(LayoutScenario).order_by(LayoutScenario.projected_revenue_change.desc()))
@@ -388,7 +374,6 @@ async def list_scenarios(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "pros": s.pros, "cons": s.cons, "status": s.status}
         for s in scenarios
     ]
-
 
 @router.post("/ai-optimize", summary="AI facility optimization recommendations")
 async def ai_optimize(db: AsyncSession = Depends(get_db)) -> dict:
@@ -450,7 +435,6 @@ Generate a 3-paragraph facility optimization brief:
         "top_scenario": scenarios[0] if scenarios else None,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-scenario-compare", summary="AI comparison of two layout scenarios")
 async def ai_scenario_compare(

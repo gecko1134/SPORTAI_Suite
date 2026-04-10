@@ -25,11 +25,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -43,12 +42,10 @@ class Sport(str, enum.Enum):
     PICKLEBALL    = "pickleball"
     ROBOTICS      = "robotics"
 
-
 class EquipmentTier(str, enum.Enum):
     MANUFACTURER  = "manufacturer"   # New/donated from Nike, UA, Wilson etc.
     CONSIGNMENT   = "consignment"    # Community drop-box donations
     RENTAL        = "rental"         # Rental/membership plan inventory
-
 
 class ItemCondition(str, enum.Enum):
     NEW       = "new"
@@ -57,14 +54,12 @@ class ItemCondition(str, enum.Enum):
     FAIR      = "fair"
     POOR      = "poor"
 
-
 class ItemStatus(str, enum.Enum):
     AVAILABLE  = "available"
     CHECKED_OUT = "checked_out"
     RESERVED   = "reserved"
     MAINTENANCE = "maintenance"
     RETIRED    = "retired"
-
 
 class TransactionType(str, enum.Enum):
     DONATION    = "donation"      # Item donated to program
@@ -73,13 +68,11 @@ class TransactionType(str, enum.Enum):
     RETURN      = "return"        # Returned from rental
     CONSIGNMENT = "consignment"   # Dropped at a box location
 
-
 class DropBoxStatus(str, enum.Enum):
     ACTIVE    = "active"
     FULL      = "full"
     INACTIVE  = "inactive"
     SCHEDULED = "scheduled"      # Pickup scheduled
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -107,7 +100,6 @@ class EquipmentItem(Base):
 
     drop_box: Mapped[Optional["DropBoxLocation"]] = relationship("DropBoxLocation", back_populates="items")
     transactions: Mapped[list["ExchangeTransaction"]] = relationship("ExchangeTransaction", back_populates="item", cascade="all, delete-orphan")
-
 
 class DropBoxLocation(Base):
     """Physical drop-box location in the consignment network (100+ boxes)."""
@@ -140,7 +132,6 @@ class DropBoxLocation(Base):
     def fill_pct(self) -> float:
         return round(self.current_item_count / self.capacity * 100, 1) if self.capacity > 0 else 0
 
-
 class ExchangeTransaction(Base):
     """Tracks every movement of equipment in/out of the program."""
     __tablename__ = "exchange_transactions"
@@ -162,7 +153,6 @@ class ExchangeTransaction(Base):
 
     item: Mapped["EquipmentItem"] = relationship("EquipmentItem", back_populates="transactions")
 
-
 # ── Pydantic Schemas ──────────────────────────────────────────────────────────
 
 class EquipmentItemCreate(BaseModel):
@@ -178,7 +168,6 @@ class EquipmentItemCreate(BaseModel):
     drop_box_id: Optional[str] = None
     notes: Optional[str] = None
 
-
 class DropBoxCreate(BaseModel):
     name: str
     address: str
@@ -190,7 +179,6 @@ class DropBoxCreate(BaseModel):
     capacity: int = 50
     sports_accepted: str = "all"
     next_pickup_date: Optional[date] = None
-
 
 class TransactionCreate(BaseModel):
     item_id: str
@@ -204,12 +192,7 @@ class TransactionCreate(BaseModel):
     rental_revenue: float = 0.0
     notes: Optional[str] = None
 
-
 # ── Database dependency ───────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:  # pragma: no cover
-    raise NotImplementedError("Wire to your AsyncSession factory")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -226,7 +209,6 @@ The Equipment Exchange operates a 3-tier system:
 8 sports: flag football, soccer, lacrosse, volleyball, softball, basketball, pickleball, robotics.
 Provide specific, actionable operational insights.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -326,7 +308,6 @@ async def seed_equipment(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Inventory ─────────────────────────────────────────────────────────────────
 
 @router.get("/inventory", summary="List all equipment inventory")
@@ -363,7 +344,6 @@ async def list_inventory(
         for i in items
     ]
 
-
 @router.post("/inventory", summary="Add equipment item to inventory")
 async def add_item(payload: EquipmentItemCreate, db: AsyncSession = Depends(get_db)) -> dict:
     item = EquipmentItem(**payload.model_dump())
@@ -371,7 +351,6 @@ async def add_item(payload: EquipmentItemCreate, db: AsyncSession = Depends(get_
     await db.commit()
     await db.refresh(item)
     return {"id": item.id, "name": item.name, "message": "Item added to inventory"}
-
 
 # ── Drop Boxes ────────────────────────────────────────────────────────────────
 
@@ -407,7 +386,6 @@ async def list_dropboxes(
         for b in boxes
     ]
 
-
 @router.post("/dropboxes", summary="Register a new drop box location")
 async def add_dropbox(payload: DropBoxCreate, db: AsyncSession = Depends(get_db)) -> dict:
     box = DropBoxLocation(**payload.model_dump())
@@ -415,7 +393,6 @@ async def add_dropbox(payload: DropBoxCreate, db: AsyncSession = Depends(get_db)
     await db.commit()
     await db.refresh(box)
     return {"id": box.id, "name": box.name, "message": "Drop box registered"}
-
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 
@@ -439,7 +416,6 @@ async def record_transaction(payload: TransactionCreate, db: AsyncSession = Depe
 
     await db.commit()
     return {"id": txn.id, "message": "Transaction recorded"}
-
 
 @router.get("/transactions", summary="List recent transactions")
 async def list_transactions(
@@ -470,7 +446,6 @@ async def list_transactions(
         }
         for t in txns
     ]
-
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
 
@@ -505,7 +480,6 @@ async def equipment_kpis(db: AsyncSession = Depends(get_db)) -> dict:
         "tier_breakdown": tier_breakdown,
     }
 
-
 @router.get("/utilization", summary="Sport-by-sport utilization analysis")
 async def utilization_by_sport(db: AsyncSession = Depends(get_db)) -> list[dict]:
     result = []
@@ -521,7 +495,6 @@ async def utilization_by_sport(db: AsyncSession = Depends(get_db)) -> list[dict]
             "utilization_pct": round(out / total * 100, 1) if total else 0,
         })
     return sorted(result, key=lambda x: x["utilization_pct"], reverse=True)
-
 
 # ── AI Insights ───────────────────────────────────────────────────────────────
 
@@ -570,7 +543,6 @@ Generate 3 paragraphs:
         "boxes_needing_pickup": [{"name": b.name, "city": b.city, "fill_pct": b.fill_pct} for b in needs_pickup],
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-dropbox-route", summary="AI-optimized pickup route for drop box collection")
 async def ai_dropbox_route(db: AsyncSession = Depends(get_db)) -> dict:

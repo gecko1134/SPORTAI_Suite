@@ -29,11 +29,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -48,14 +47,12 @@ PHASE2_YEAR1_REV     = 3_800_000.0   # Skill Shot
 TID_ASSESSMENT_RATE  = 0.015         # 1.5% of hotel room revenue
 HOTEL_ROOMS          = 85
 
-
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
 class CapitalPhase(str, enum.Enum):
     PHASE1 = "phase1"    # $5.2M campus build
     PHASE2 = "phase2"    # $4.65M Skill Shot + PuttView
     BRIDGE = "bridge"    # Short-term working capital
-
 
 class SourceType(str, enum.Enum):
     COMMUNITY_BONDS  = "community_bonds"
@@ -70,7 +67,6 @@ class SourceType(str, enum.Enum):
     IRRRB_GRANT      = "irrrb_grant"
     MN_DEED_GRANT    = "mn_deed_grant"
 
-
 class SourceStatus(str, enum.Enum):
     PLANNING     = "planning"
     APPLICATION  = "application"
@@ -78,7 +74,6 @@ class SourceStatus(str, enum.Enum):
     RECEIVED     = "received"
     DEPLOYED     = "deployed"
     CLOSED       = "closed"
-
 
 class DisbursementCategory(str, enum.Enum):
     LAND             = "land"
@@ -89,7 +84,6 @@ class DisbursementCategory(str, enum.Enum):
     WORKING_CAPITAL  = "working_capital"
     CONTINGENCY      = "contingency"
     DEBT_SERVICE     = "debt_service"
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -135,7 +129,6 @@ class CapitalSource(Base):
         monthly = self.committed_amount * (r * (1 + r) ** n) / ((1 + r) ** n - 1)
         return round(monthly * 12, 2)
 
-
 class CapitalDisbursement(Base):
     """Capital disbursement — tracks where capital goes."""
     __tablename__ = "capital_disbursements"
@@ -151,7 +144,6 @@ class CapitalDisbursement(Base):
     is_approved: Mapped[bool]              = mapped_column(Boolean, default=True)
     notes: Mapped[Optional[str]]           = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime]           = mapped_column(DateTime(timezone=True), server_default=func.now())
-
 
 class InvestorReport(Base):
     """Periodic investor report snapshots."""
@@ -169,7 +161,6 @@ class InvestorReport(Base):
     narrative: Mapped[Optional[str]]     = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime]         = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 class TIDLedger(Base):
     """Tourism Improvement District bond modeling and assessment tracking."""
     __tablename__ = "tid_ledger"
@@ -184,7 +175,6 @@ class TIDLedger(Base):
     tourism_visitors_est: Mapped[int]    = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime]         = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
 class SourceUpdate(BaseModel):
@@ -193,7 +183,6 @@ class SourceUpdate(BaseModel):
     deployed_amount: Optional[float] = None
     status: Optional[SourceStatus] = None
     notes: Optional[str] = None
-
 
 class DisbursementCreate(BaseModel):
     source_id: Optional[str] = None
@@ -205,12 +194,7 @@ class DisbursementCreate(BaseModel):
     vendor: Optional[str] = None
     notes: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -226,7 +210,6 @@ Targets: IRR 36.8% | Payback 3.1 years | 5-year combined revenue $35.6M
 TID (Tourism Improvement District) assessment: 1.5% of hotel room revenue.
 Provide investor-quality, specific capital strategy insights.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -365,7 +348,6 @@ async def seed_capital(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Sources ───────────────────────────────────────────────────────────────────
 
 @router.get("/sources", summary="All capital sources — committed, received, deployed")
@@ -389,7 +371,6 @@ async def list_sources(
         for s in sources
     ]
 
-
 @router.patch("/sources/{source_id}", summary="Update capital source progress")
 async def update_source(source_id: str, payload: SourceUpdate, db: AsyncSession = Depends(get_db)) -> dict:
     result = await db.execute(select(CapitalSource).where(CapitalSource.id == source_id))
@@ -400,7 +381,6 @@ async def update_source(source_id: str, payload: SourceUpdate, db: AsyncSession 
         setattr(source, k, v)
     await db.commit()
     return {"id": source.id, "message": "Source updated"}
-
 
 # ── Disbursements ─────────────────────────────────────────────────────────────
 
@@ -422,14 +402,12 @@ async def list_disbursements(
         for d in disbs
     ]
 
-
 @router.post("/disbursements", summary="Log a capital disbursement")
 async def create_disbursement(payload: DisbursementCreate, db: AsyncSession = Depends(get_db)) -> dict:
     disb = CapitalDisbursement(**payload.model_dump())
     db.add(disb)
     await db.commit()
     return {"message": "Disbursement logged"}
-
 
 # ── IRR Model ─────────────────────────────────────────────────────────────────
 
@@ -490,7 +468,6 @@ async def irr_model(db: AsyncSession = Depends(get_db)) -> dict:
         "five_year_cashflow_model": [{"year": i + 1, "revenue": round(r, 2), "net": round(n, 2)} for i, (r, n) in enumerate(zip(annual_revenues, annual_net))],
     }
 
-
 # ── TID ───────────────────────────────────────────────────────────────────────
 
 @router.get("/tid-model", summary="TID bond modeling — monthly assessments and cumulative")
@@ -524,7 +501,6 @@ async def tid_model(db: AsyncSession = Depends(get_db)) -> dict:
         ],
     }
 
-
 # ── Investor Reports ──────────────────────────────────────────────────────────
 
 @router.get("/investor-reports", summary="Periodic investor report history")
@@ -539,7 +515,6 @@ async def investor_reports(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "narrative": r.narrative, "created_at": r.created_at.isoformat()}
         for r in reports
     ]
-
 
 # ── AI Investor Brief ─────────────────────────────────────────────────────────
 
@@ -608,7 +583,6 @@ Generate a 4-paragraph investor-quality capital brief:
         },
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-gap-close-brief", summary="AI tactical brief for closing remaining capital gaps")
 async def ai_gap_close(db: AsyncSession = Depends(get_db)) -> dict:

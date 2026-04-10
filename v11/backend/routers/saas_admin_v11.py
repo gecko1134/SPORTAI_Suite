@@ -24,11 +24,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -37,19 +36,16 @@ class TierPlan(str, enum.Enum):
     PROFESSIONAL = "professional"# $599/mo
     ENTERPRISE  = "enterprise"   # $1,499/mo
 
-
 class TenantStatus(str, enum.Enum):
     TRIAL    = "trial"
     ACTIVE   = "active"
     PAUSED   = "paused"
     CHURNED  = "churned"
 
-
 class KeyStatus(str, enum.Enum):
     ACTIVE   = "active"
     REVOKED  = "revoked"
     EXPIRED  = "expired"
-
 
 PLAN_PRICING = {
     TierPlan.STARTER:      299.0,
@@ -62,7 +58,6 @@ PLAN_LIMITS = {
     TierPlan.PROFESSIONAL: {"api_calls_monthly": 50_000, "modules": 12, "users": 10},
     TierPlan.ENTERPRISE:   {"api_calls_monthly": 500_000, "modules": 99, "users": 999},
 }
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -88,7 +83,6 @@ class SaaSTenant(Base):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 class APIKey(Base):
     """API key for tenant access."""
     __tablename__ = "api_keys_v11"
@@ -105,7 +99,6 @@ class APIKey(Base):
     expires_at: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 class WhiteLabelConfig(Base):
     """White-label branding config per tenant."""
     __tablename__ = "white_label_configs_v11"
@@ -121,17 +114,11 @@ class WhiteLabelConfig(Base):
     hide_powered_by: Mapped[bool]= mapped_column(Boolean, default=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
 router = APIRouter(prefix="/api/saas-admin", tags=["SaaS Admin v11"])
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -215,7 +202,6 @@ async def seed_saas(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── MRR Dashboard ─────────────────────────────────────────────────────────────
 
 @router.get("/mrr-dashboard", summary="SaaS MRR, ARR, churn, and growth metrics")
@@ -259,7 +245,6 @@ async def mrr_dashboard(db: AsyncSession = Depends(get_db)) -> dict:
         "ltv_estimate_avg": round(mrr / len(active) * 24, 2) if active else 0,  # 24mo avg retention
     }
 
-
 # ── Tenants ───────────────────────────────────────────────────────────────────
 
 @router.get("/tenants", summary="List all SaaS tenants")
@@ -284,7 +269,6 @@ async def list_tenants(
         for t in tenants
     ]
 
-
 # ── API Keys ──────────────────────────────────────────────────────────────────
 
 @router.get("/api-keys", summary="List API keys with usage stats")
@@ -306,7 +290,6 @@ async def list_api_keys(
         for k in keys
     ]
 
-
 # ── White-Label ───────────────────────────────────────────────────────────────
 
 @router.get("/white-label-configs", summary="White-label configs for enterprise tenants")
@@ -319,7 +302,6 @@ async def list_wl_configs(db: AsyncSession = Depends(get_db)) -> list[dict]:
          "custom_domain": c.custom_domain, "hide_powered_by": c.hide_powered_by}
         for c in configs
     ]
-
 
 # ── v11 Changelog ─────────────────────────────────────────────────────────────
 

@@ -25,11 +25,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -44,7 +43,6 @@ class Funder(str, enum.Enum):
     PRIVATE  = "private"
     OTHER    = "other"
 
-
 class ApplicationStatus(str, enum.Enum):
     DRAFTING       = "drafting"
     SUBMITTED      = "submitted"
@@ -54,14 +52,12 @@ class ApplicationStatus(str, enum.Enum):
     WAITLISTED     = "waitlisted"
     WITHDRAWN      = "withdrawn"
 
-
 class ComplianceStatus(str, enum.Enum):
     CURRENT    = "current"
     DUE_SOON   = "due_soon"
     OVERDUE    = "overdue"
     SUBMITTED  = "submitted"
     APPROVED   = "approved"
-
 
 class GrantCategory(str, enum.Enum):
     CAPITAL       = "capital"         # Infrastructure / facility
@@ -72,7 +68,6 @@ class GrantCategory(str, enum.Enum):
     TOURISM       = "tourism"         # Visitor / regional tourism
     TECHNOLOGY    = "technology"      # Tech / innovation
     GENERAL       = "general_operating"
-
 
 # ── Funder profiles ───────────────────────────────────────────────────────────
 
@@ -133,7 +128,6 @@ FUNDER_PROFILES = {
     },
 }
 
-
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
 class GrantFunder(Base):
@@ -151,7 +145,6 @@ class GrantFunder(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     applications: Mapped[list["GrantApplication"]] = relationship("GrantApplication", back_populates="funder_ref")
-
 
 class GrantApplication(Base):
     """Grant application — tracks full lifecycle from draft to award."""
@@ -191,7 +184,6 @@ class GrantApplication(Base):
         d = self.days_until_deadline
         return d is not None and 0 <= d <= 30
 
-
 class GrantComplianceEvent(Base):
     """Progress reports, site visits, financial reports — post-award compliance."""
     __tablename__ = "grant_compliance_events"
@@ -207,7 +199,6 @@ class GrantComplianceEvent(Base):
 
     application: Mapped["GrantApplication"] = relationship("GrantApplication", back_populates="compliance_events")
 
-
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
 class ApplicationCreate(BaseModel):
@@ -219,7 +210,6 @@ class ApplicationCreate(BaseModel):
     lead_contact: Optional[str] = None
     notes: Optional[str] = None
 
-
 class ApplicationUpdate(BaseModel):
     status: Optional[ApplicationStatus] = None
     amount_awarded: Optional[float] = None
@@ -229,7 +219,6 @@ class ApplicationUpdate(BaseModel):
     narrative: Optional[str] = None
     notes: Optional[str] = None
 
-
 class ComplianceCreate(BaseModel):
     application_id: str
     event_type: str
@@ -237,12 +226,7 @@ class ComplianceCreate(BaseModel):
     due_date: Optional[date] = None
     notes: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -272,7 +256,6 @@ No comparable organization within 60 miles.
 
 Generate compelling, specific, funder-aligned grant narratives.
 """
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -399,7 +382,6 @@ async def seed_grants(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Funders ───────────────────────────────────────────────────────────────────
 
 @router.get("/funders", summary="List all grant funders with profiles")
@@ -418,7 +400,6 @@ async def list_funders(priority_only: bool = Query(False), db: AsyncSession = De
         }
         for f in funders
     ]
-
 
 # ── Applications ──────────────────────────────────────────────────────────────
 
@@ -455,7 +436,6 @@ async def list_applications(
         for a in apps
     ]
 
-
 @router.post("/applications", summary="Create a new grant application")
 async def create_application(payload: ApplicationCreate, db: AsyncSession = Depends(get_db)) -> dict:
     # Get or create funder record
@@ -470,7 +450,6 @@ async def create_application(payload: ApplicationCreate, db: AsyncSession = Depe
     await db.refresh(app)
     return {"id": app.id, "title": app.title, "message": "Application created"}
 
-
 @router.patch("/applications/{app_id}", summary="Update application status or award")
 async def update_application(app_id: str, payload: ApplicationUpdate, db: AsyncSession = Depends(get_db)) -> dict:
     result = await db.execute(select(GrantApplication).where(GrantApplication.id == app_id))
@@ -481,7 +460,6 @@ async def update_application(app_id: str, payload: ApplicationUpdate, db: AsyncS
         setattr(app, k, v)
     await db.commit()
     return {"id": app.id, "message": "Application updated"}
-
 
 # ── Compliance ────────────────────────────────────────────────────────────────
 
@@ -505,14 +483,12 @@ async def compliance_overview(db: AsyncSession = Depends(get_db)) -> dict:
         "summary": {"overdue_count": len(overdue), "due_soon_count": len(due_soon)},
     }
 
-
 @router.post("/compliance", summary="Log a compliance event")
 async def log_compliance(payload: ComplianceCreate, db: AsyncSession = Depends(get_db)) -> dict:
     event = GrantComplianceEvent(**payload.model_dump())
     db.add(event)
     await db.commit()
     return {"message": "Compliance event logged"}
-
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
 
@@ -557,7 +533,6 @@ async def grant_kpis(db: AsyncSession = Depends(get_db)) -> dict:
         "status_breakdown": status_breakdown,
         "funder_breakdown": {k: {kk: round(vv, 2) if isinstance(vv, float) else vv for kk, vv in v.items()} for k, v in funder_breakdown.items()},
     }
-
 
 # ── AI Narrative Generation ───────────────────────────────────────────────────
 
@@ -630,7 +605,6 @@ Be specific, compelling, and funder-aligned throughout. Avoid generic language.
         "profile": profile,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-pipeline-brief", summary="AI grant pipeline strategy brief")
 async def ai_pipeline_brief(db: AsyncSession = Depends(get_db)) -> dict:

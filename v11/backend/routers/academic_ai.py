@@ -27,11 +27,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -42,14 +41,12 @@ class InstitutionLevel(str, enum.Enum):
     UNIVERSITY   = "university"
     CLUB_PROGRAM = "club_program"
 
-
 class PartnerStatus(str, enum.Enum):
     PROSPECT    = "prospect"
     NEGOTIATING = "negotiating"
     ACTIVE      = "active"
     RENEWAL     = "renewal"
     LAPSED      = "lapsed"
-
 
 class Sport(str, enum.Enum):
     FLAG_FOOTBALL = "flag_football"
@@ -63,14 +60,12 @@ class Sport(str, enum.Enum):
     ICE_HOCKEY    = "ice_hockey"
     MULTI_SPORT   = "multi_sport"
 
-
 class ScholarshipType(str, enum.Enum):
     PRACTICE_HOURS   = "practice_hours"    # Facility time given at no charge
     TOURNAMENT_ENTRY = "tournament_entry"  # Discounted/free tournament registration
     EQUIPMENT_ACCESS = "equipment_access"  # Equipment exchange program
     COACHING_CLINIC  = "coaching_clinic"   # Free coaching clinics
     GAME_FILM        = "game_film"         # TrackMan / facility analytics access
-
 
 class RecruitingMatchStatus(str, enum.Enum):
     PENDING   = "pending"
@@ -79,13 +74,11 @@ class RecruitingMatchStatus(str, enum.Enum):
     COMMITTED = "committed"
     DECLINED  = "declined"
 
-
 class BlockStatus(str, enum.Enum):
     CONFIRMED   = "confirmed"
     TENTATIVE   = "tentative"
     COMPLETED   = "completed"
     CANCELLED   = "cancelled"
-
 
 class ComplianceType(str, enum.Enum):
     MOU_RENEWAL       = "mou_renewal"
@@ -93,7 +86,6 @@ class ComplianceType(str, enum.Enum):
     INSURANCE_CERT    = "insurance_cert"
     ACADEMIC_STANDING = "academic_standing"
     BACKGROUND_CHECK  = "background_check"
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -148,7 +140,6 @@ class AcademicPartner(Base):
         d = self.days_until_expiry
         return d is not None and 0 <= d <= 90
 
-
 class ScholarshipHour(Base):
     """Facility scholarship hours granted to academic partners."""
     __tablename__ = "scholarship_hours"
@@ -167,7 +158,6 @@ class ScholarshipHour(Base):
     created_at: Mapped[datetime]        = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     partner: Mapped["AcademicPartner"] = relationship("AcademicPartner", back_populates="scholarship_hours")
-
 
 class RecruitingMatch(Base):
     """AI-matched recruiting connection — athlete to college/university program."""
@@ -191,7 +181,6 @@ class RecruitingMatch(Base):
 
     partner: Mapped["AcademicPartner"] = relationship("AcademicPartner", back_populates="recruiting_matches")
 
-
 class AcademicScheduleBlock(Base):
     """Reserved facility time for academic partner practice or games."""
     __tablename__ = "academic_schedule_blocks"
@@ -214,7 +203,6 @@ class AcademicScheduleBlock(Base):
 
     partner: Mapped["AcademicPartner"] = relationship("AcademicPartner", back_populates="schedule_blocks")
 
-
 class AcademicComplianceRecord(Base):
     """Compliance documents and renewals for academic partners."""
     __tablename__ = "academic_compliance_records"
@@ -230,7 +218,6 @@ class AcademicComplianceRecord(Base):
     created_at: Mapped[datetime]           = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     partner: Mapped["AcademicPartner"] = relationship("AcademicPartner", back_populates="compliance_records")
-
 
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
@@ -250,13 +237,11 @@ class PartnerCreate(BaseModel):
     scholarship_hours_granted: float = 0.0
     notes: Optional[str] = None
 
-
 class PartnerUpdate(BaseModel):
     status: Optional[PartnerStatus] = None
     scholarship_hours_used: Optional[float] = None
     annual_contract_value: Optional[float] = None
     notes: Optional[str] = None
-
 
 class ScheduleBlockCreate(BaseModel):
     partner_id: str
@@ -270,7 +255,6 @@ class ScheduleBlockCreate(BaseModel):
     attendees: Optional[int] = None
     notes: Optional[str] = None
 
-
 class RecruitingMatchCreate(BaseModel):
     partner_id: str
     athlete_name: str
@@ -281,12 +265,7 @@ class RecruitingMatchCreate(BaseModel):
     match_score: int
     match_rationale: Optional[str] = None
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -306,7 +285,6 @@ Provide specific, actionable insights for growing academic partnerships and scho
 
 FACILITY_AREAS = ["Large Dome", "Small Dome", "Health Center", "Outdoor Field 1",
                   "Outdoor Field 2", "Ice Rink", "Skill Shot Academy", "PuttView AR"]
-
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
@@ -484,7 +462,6 @@ async def seed_academic(db: AsyncSession = Depends(get_db)) -> dict:
         "seeded": True,
     }
 
-
 # ── Partners ──────────────────────────────────────────────────────────────────
 
 @router.get("/partners", summary="List all academic partners")
@@ -517,7 +494,6 @@ async def list_partners(
         for p in partners
     ]
 
-
 @router.post("/partners", summary="Add a new academic partner")
 async def create_partner(payload: PartnerCreate, db: AsyncSession = Depends(get_db)) -> dict:
     partner = AcademicPartner(**payload.model_dump())
@@ -525,7 +501,6 @@ async def create_partner(payload: PartnerCreate, db: AsyncSession = Depends(get_
     await db.commit()
     await db.refresh(partner)
     return {"id": partner.id, "institution_name": partner.institution_name, "message": "Partner added"}
-
 
 @router.patch("/partners/{partner_id}", summary="Update partner status or scholarship hours")
 async def update_partner(partner_id: str, payload: PartnerUpdate, db: AsyncSession = Depends(get_db)) -> dict:
@@ -537,7 +512,6 @@ async def update_partner(partner_id: str, payload: PartnerUpdate, db: AsyncSessi
         setattr(partner, k, v)
     await db.commit()
     return {"id": partner.id, "message": "Partner updated"}
-
 
 # ── Scholarship Hours ─────────────────────────────────────────────────────────
 
@@ -575,7 +549,6 @@ async def scholarship_hours_summary(db: AsyncSession = Depends(get_db)) -> dict:
         ],
     }
 
-
 # ── Scheduling ────────────────────────────────────────────────────────────────
 
 @router.get("/schedule", summary="Upcoming academic schedule blocks")
@@ -611,7 +584,6 @@ async def academic_schedule(
         for b in blocks
     ]
 
-
 @router.post("/schedule", summary="Book an academic facility block")
 async def create_block(payload: ScheduleBlockCreate, db: AsyncSession = Depends(get_db)) -> dict:
     start_dt = datetime.combine(date.today(), payload.start_time)
@@ -625,7 +597,6 @@ async def create_block(payload: ScheduleBlockCreate, db: AsyncSession = Depends(
     db.add(block)
     await db.commit()
     return {"id": block.id, "revenue": revenue, "duration_hours": hours, "message": "Block reserved"}
-
 
 # ── Recruiting ────────────────────────────────────────────────────────────────
 
@@ -654,14 +625,12 @@ async def recruiting_matches(
         for m in matches
     ]
 
-
 @router.post("/recruiting-match", summary="Create a recruiting match")
 async def create_match(payload: RecruitingMatchCreate, db: AsyncSession = Depends(get_db)) -> dict:
     match = RecruitingMatch(**payload.model_dump())
     db.add(match)
     await db.commit()
     return {"id": match.id, "match_score": payload.match_score, "message": "Match created"}
-
 
 # ── Compliance ────────────────────────────────────────────────────────────────
 
@@ -683,7 +652,6 @@ async def compliance_overview(db: AsyncSession = Depends(get_db)) -> dict:
         "overdue_records": [{"id": r.id, "partner_id": r.partner_id, "compliance_type": r.compliance_type, "due_date": r.due_date.isoformat() if r.due_date else None} for r in overdue],
         "due_soon_records": [{"id": r.id, "partner_id": r.partner_id, "compliance_type": r.compliance_type, "due_date": r.due_date.isoformat() if r.due_date else None, "days_until_due": (r.due_date - date.today()).days if r.due_date else None} for r in due_soon],
     }
-
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
 
@@ -732,7 +700,6 @@ async def academic_kpis(db: AsyncSession = Depends(get_db)) -> dict:
         "committed_recruiting_matches": committed_matches,
         "level_breakdown": level_breakdown,
     }
-
 
 # ── AI Endpoints ──────────────────────────────────────────────────────────────
 
@@ -795,7 +762,6 @@ Generate a 3-paragraph partner brief:
         "generated_at": datetime.utcnow().isoformat(),
     }
 
-
 @router.post("/ai-program-brief", summary="AI academic program portfolio brief")
 async def ai_program_brief(db: AsyncSession = Depends(get_db)) -> dict:
     kpis = await academic_kpis(db)
@@ -846,7 +812,6 @@ Generate a 3-paragraph portfolio brief:
         "kpis": kpis,
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 @router.post("/ai-recruiting-brief", summary="AI recruiting match strategy for a partner")
 async def ai_recruiting_brief(

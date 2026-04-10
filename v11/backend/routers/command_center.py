@@ -34,11 +34,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
+from database import get_db
 
 class Base(DeclarativeBase):
     pass
-
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -48,18 +47,15 @@ class Entity(str, enum.Enum):
     LPF_FOUNDATION = "lpf_foundation"   # 501(c)(3) nonprofit
     NGP_DEV = "ngp_development"         # Real estate & development
 
-
 class AnomalyLevel(str, enum.Enum):
     INFO     = "info"
     WARNING  = "warning"
     CRITICAL = "critical"
 
-
 class SummaryPeriod(str, enum.Enum):
     WEEKLY  = "weekly"
     MONTHLY = "monthly"
     ANNUAL  = "annual"
-
 
 # ── ORM Models ────────────────────────────────────────────────────────────────
 
@@ -78,7 +74,6 @@ class EntityHealthSnapshot(Base):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-
 class ExecutiveSummary(Base):
     """AI-generated executive summary snapshots."""
     __tablename__ = "executive_summaries"
@@ -90,7 +85,6 @@ class ExecutiveSummary(Base):
     headline_metric: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     entity_focus: Mapped[str]    = mapped_column(String(20), default="all")
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
 
 class AnomalyAlert(Base):
     """Flagged anomalies across modules — outliers vs. expected patterns."""
@@ -110,18 +104,12 @@ class AnomalyAlert(Base):
     identified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-
 # ── Pydantic ──────────────────────────────────────────────────────────────────
 
 class AnomalyResolve(BaseModel):
     resolved: bool = True
 
-
 # ── DB dependency ─────────────────────────────────────────────────────────────
-
-async def get_db() -> AsyncSession:
-    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
-
 
 # ── Router ────────────────────────────────────────────────────────────────────
 
@@ -183,7 +171,6 @@ SEEDED_ANOMALIES = [
      "metric_name": "renewal_partners", "metric_value": 2.0, "expected_value": 0.0, "deviation_pct": 100.0},
 ]
 
-
 # ── Seed ──────────────────────────────────────────────────────────────────────
 
 @router.post("/seed", summary="Seed entity health snapshots, anomaly alerts, and initial executive summary")
@@ -220,7 +207,6 @@ async def seed_command_center(db: AsyncSession = Depends(get_db)) -> dict:
         "anomaly_alerts": len(SEEDED_ANOMALIES),
         "seeded": True,
     }
-
 
 # ── KPI Dashboard ─────────────────────────────────────────────────────────────
 
@@ -347,7 +333,6 @@ async def kpi_dashboard() -> dict:
         },
     }
 
-
 # ── Entity Health Scores ──────────────────────────────────────────────────────
 
 @router.get("/entity-health-scores", summary="Health scores (0–100) for all 4 entities")
@@ -371,7 +356,6 @@ async def entity_health_scores(db: AsyncSession = Depends(get_db)) -> list[dict]
          "notes": s.notes, "snapshot_date": s.snapshot_date}
         for s in snapshots
     ]
-
 
 # ── Anomaly Alerts ────────────────────────────────────────────────────────────
 
@@ -409,7 +393,6 @@ async def anomaly_alerts(
         "alerts": by_level,
     }
 
-
 @router.patch("/anomaly-alerts/{alert_id}", summary="Resolve an anomaly alert")
 async def resolve_alert(alert_id: str, payload: AnomalyResolve, db: AsyncSession = Depends(get_db)) -> dict:
     from fastapi import HTTPException
@@ -422,7 +405,6 @@ async def resolve_alert(alert_id: str, payload: AnomalyResolve, db: AsyncSession
         alert.resolved_at = datetime.utcnow()
     await db.commit()
     return {"id": alert.id, "message": "Alert updated"}
-
 
 # ── Executive Summaries ───────────────────────────────────────────────────────
 
@@ -536,7 +518,6 @@ Generate a {period.value} executive summary in 4 paragraphs:
         "generated_at": datetime.utcnow().isoformat(),
     }
 
-
 @router.get("/executive-summaries", summary="History of generated executive summaries")
 async def list_summaries(
     period: Optional[SummaryPeriod] = Query(None),
@@ -555,7 +536,6 @@ async def list_summaries(
          "generated_at": s.generated_at.isoformat()}
         for s in summaries
     ]
-
 
 # ── Entity-specific deep dives ────────────────────────────────────────────────
 
@@ -611,7 +591,6 @@ Generate a 3-paragraph entity brief:
         "open_alerts": len(entity_alerts),
         "generated_at": datetime.utcnow().isoformat(),
     }
-
 
 def lbl(s: str) -> str:
     return s.replace("_", " ").title()
