@@ -285,7 +285,7 @@ class RecruitingMatchCreate(BaseModel):
 # ── DB dependency ─────────────────────────────────────────────────────────────
 
 async def get_db() -> AsyncSession:
-    raise NotImplementedError("Wire to your AsyncSession factory")
+    raise NotImplementedError("Replace with: from database import get_db  # then remove this function")
 
 
 # ── Router ────────────────────────────────────────────────────────────────────
