@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # ── v11 Routers ───────────────────────────────────────────────────────────────
+from routers.auth                import router as auth_router
 from routers.nil_ai              import router as nil_router
 from routers.equipment_ai        import router as equipment_router
 from routers.foundation_card     import router as foundation_card_router
@@ -52,6 +53,7 @@ app.add_middleware(
 
 # ── Register all v11 routers ──────────────────────────────────────────────────
 for router in [
+    auth_router,
     nil_router, equipment_router, foundation_card_router, grant_router,
     hotel_router, lodging_router, skill_shot_router, puttview_router,
     rink_router, fnb_router, academic_router, revenue_maximizer_router,
